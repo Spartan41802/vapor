@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — Fixed Upload</title>
+    <title>VAPOR — File Update Fix</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -206,10 +206,9 @@
 
     <script>
         // =================================================
-        //  ⚠️  PASTE YOUR NEW TOKEN HERE (must have "repo" scope!)
-        //  If empty, the token from your browser will be used.
+        //  ⚠️  PASTE YOUR NEW TOKEN HERE (with "repo" scope)
         // =================================================
-        const DEFAULT_TOKEN = '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'; 
+        const DEFAULT_TOKEN = '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'; // ← your fresh token
 
         (async function() {
             const $ = (sel) => document.querySelector(sel);
@@ -306,7 +305,7 @@
                     const data = await fetchDirectoryContents(path);
                     return data.sha;
                 } catch(e) {
-                    return null;
+                    return null; // file doesn't exist
                 }
             }
 
@@ -329,11 +328,13 @@
                 if (!info) return;
                 const path = 'vapor_stats.json';
                 const content = JSON.stringify(state.stats, null, 2);
+                // Proper UTF-8 to base64 encoding
+                const base64Content = btoa(unescape(encodeURIComponent(content)));
                 const sha = await getFileSha(path);
                 const url = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${path}`;
                 const body = {
                     message: 'Update video stats',
-                    content: btoa(unescape(encodeURIComponent(content))),
+                    content: base64Content,
                     branch: info.branch
                 };
                 if (sha) body.sha = sha;
@@ -798,7 +799,7 @@
                 else navigateToHome();
             });
 
-            // Upload logic
+            // Upload logic with SHA fix
             function populateChannelSelect() {
                 channelSelect.innerHTML = '<option value="">-- Choose a channel --</option>';
                 for (const [key, ch] of Object.entries(state.channels)) {
@@ -878,26 +879,43 @@
                     if (!info) throw new Error('No repo info.');
 
                     const path = `video/${channelName}/${finalFilename}`;
+                    // Check if file already exists to get its SHA (for updates)
+                    const sha = await getFileSha(path);
+
+                    // Read file as base64 (properly)
                     const reader = new FileReader();
-                    const base64 = await new Promise((res, rej) => {
-                        reader.onload = () => res(reader.result.split(',')[1]);
-                        reader.onerror = rej;
+                    const base64Content = await new Promise((resolve, reject) => {
+                        reader.onload = () => {
+                            // Extract base64 part after comma
+                            const base64 = reader.result.split(',')[1];
+                            resolve(base64);
+                        };
+                        reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
+
                     const putUrl = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${path}`;
-                    const body = { message: `Upload ${finalFilename}`, content: base64, branch: info.branch };
+                    const body = {
+                        message: `Upload ${finalFilename}`,
+                        content: base64Content,
+                        branch: info.branch
+                    };
+                    if (sha) body.sha = sha;  // Include SHA if updating
+
                     const putRes = await fetch(putUrl, {
                         method: 'PUT',
                         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
                     if (!putRes.ok) {
-                        const errData = await putRes.json();
-                        let message = errData.message || 'Unknown error';
+                        const errData = await putRes.json().catch(() => ({ message: 'Unknown error' }));
+                        let message = errData.message || 'Upload failed';
                         if (putRes.status === 401) {
-                            message = 'Bad credentials – your token is invalid or expired. Generate a new one with "repo" scope.';
+                            message = 'Bad credentials – your token is invalid or expired.';
                         } else if (putRes.status === 403) {
-                            message = 'Access denied – ensure the token has the "repo" scope.';
+                            message = 'Access denied – token needs "repo" scope.';
+                        } else if (putRes.status === 422) {
+                            message = 'Update failed – file may already exist or SHA missing.';
                         }
                         throw new Error(message);
                     }
