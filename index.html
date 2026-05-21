@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — Fixed Playback</title>
+    <title>VAPOR — Easy Upload</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -118,6 +118,7 @@
         .loading { text-align:center; padding:60px; color:var(--text3); }
         .error-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; color:#ff4d4d; font-size:0.9rem; text-align:center; padding:20px; }
 
+        /* Upload Modal */
         .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; }
         .modal { background:var(--bg2); border-radius:var(--radius); padding:24px; width:90%; max-width:420px; border:1px solid var(--border); }
         .modal h2 { margin-bottom:16px; font-size:1.2rem; }
@@ -127,6 +128,7 @@
         .modal button.cancel { background:var(--bg3); margin-left:8px; }
         .token-warning { font-size:0.7rem; color:var(--text3); margin-top:4px; }
         .upload-status { font-size:0.8rem; margin-top:8px; color:var(--accent); }
+        .hidden { display: none; }
 
         @media (max-width:800px) {
             #sidebar { width:160px; }
@@ -177,19 +179,26 @@
         <main id="mainContent"></main>
     </div>
 
+    <!-- Upload Modal (simplified) -->
     <div id="uploadModal" class="modal-overlay" style="display:none;">
         <div class="modal">
             <h2>Upload Video</h2>
+            <label>Video Title</label>
+            <input type="text" id="videoTitle" placeholder="My Awesome Video">
+            <label>Channel</label>
+            <select id="channelSelect">
+                <option value="">-- Choose a channel --</option>
+            </select>
+            <div id="newChannelWrap" class="hidden">
+                <label>New Channel Name</label>
+                <input type="text" id="newChannelName" placeholder="e.g. Spartan">
+            </div>
+            <label>Video File (.mp4, .webm, .mkv)</label>
+            <input type="file" id="fileInput" accept=".mp4,.webm,.mkv">
             <label>GitHub Token (with repo scope)</label>
             <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
             <div class="token-warning">Token is saved only in this browser.</div>
-            <label>Channel Folder</label>
-            <select id="channelSelect"></select>
-            <label>Video File (.mp4)</label>
-            <input type="file" id="fileInput" accept=".mp4,.webm,.mkv">
-            <label>Custom filename (optional, without extension)</label>
-            <input type="text" id="customFilename" placeholder="Leave empty for original name">
-            <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
                 <button class="cancel" id="cancelUpload">Cancel</button>
                 <button id="confirmUpload">Upload</button>
             </div>
@@ -210,10 +219,12 @@
             const searchBtn = $('#searchBtn');
             const uploadBtn = $('#uploadBtn');
             const uploadModal = $('#uploadModal');
-            const tokenInput = $('#tokenInput');
+            const videoTitleInput = $('#videoTitle');
             const channelSelect = $('#channelSelect');
+            const newChannelWrap = $('#newChannelWrap');
+            const newChannelNameInput = $('#newChannelName');
             const fileInput = $('#fileInput');
-            const customFilename = $('#customFilename');
+            const tokenInput = $('#tokenInput');
             const cancelUpload = $('#cancelUpload');
             const confirmUpload = $('#confirmUpload');
             const uploadStatus = $('#uploadStatus');
@@ -231,7 +242,6 @@
                 channels: {}
             };
 
-            // Repo info
             let repoInfo = null;
             async function getRepoInfo() {
                 if (repoInfo) return repoInfo;
@@ -240,7 +250,6 @@
                 if (hostname.endsWith('github.io')) {
                     const owner = hostname.replace('.github.io', '');
                     const repo = parts[0] || '';
-                    // Determine default branch
                     let branch = 'main';
                     try {
                         const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
@@ -339,12 +348,10 @@
                 return all;
             }
 
-            // Build video source URLs (fallback logic)
             function buildVideoSources(channelKey, file) {
                 const channelName = state.channels[channelKey]?.name || channelKey;
                 const relativePath = `video/${channelName}/${file}`;
                 const sources = [relativePath];
-                // Add raw GitHub URL as fallback (only if repoInfo is available)
                 if (repoInfo) {
                     const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/video/${channelName}/${file}`;
                     sources.push(rawUrl);
@@ -352,7 +359,7 @@
                 return sources;
             }
 
-            // Render functions
+            // Render functions (unchanged except for upload modal updates)
             function renderHome() {
                 mainContent.innerHTML = '';
                 const all = getAllVideos();
@@ -362,7 +369,7 @@
                     filtered = all.filter(v => v.title.toLowerCase().includes(q) || v.channelName.toLowerCase().includes(q));
                 }
                 if (Object.keys(state.channels).length === 0) {
-                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory.</p></div>`;
+                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory or use the upload button.</p></div>`;
                     return;
                 }
                 if (filtered.length === 0) {
@@ -461,7 +468,6 @@
                 const main = document.createElement('div');
                 main.className = 'watch-main';
 
-                // Player with fallback
                 const player = document.createElement('div');
                 player.className = 'player-wrap';
                 const vid = document.createElement('video');
@@ -476,16 +482,12 @@
                         vid.src = sources[currentSourceIndex];
                         currentSourceIndex++;
                     } else {
-                        // All sources failed
                         player.innerHTML = '<div class="error-overlay">⚠️ Video not accessible.<br>Check file path or repository settings.</div>';
                     }
                 }
 
-                vid.addEventListener('error', () => {
-                    setNextSource();
-                });
+                vid.addEventListener('error', () => setNextSource());
                 vid.addEventListener('loadeddata', () => {
-                    // Success, clear any error overlay
                     const overlay = player.querySelector('.error-overlay');
                     if (overlay) overlay.remove();
                 });
@@ -698,62 +700,98 @@
                 else navigateToHome();
             });
 
-            // Upload functionality (unchanged)
-            uploadBtn.onclick = () => {
-                channelSelect.innerHTML = '';
-                const keys = Object.keys(state.channels);
-                if (keys.length === 0) {
-                    channelSelect.innerHTML = '<option value="">-- No channels --</option>';
-                } else {
-                    keys.forEach(key => {
-                        const opt = document.createElement('option');
-                        opt.value = key;
-                        opt.textContent = state.channels[key].name;
-                        channelSelect.appendChild(opt);
-                    });
+            // --- Upload Logic (simplified) ---
+            function populateChannelSelect() {
+                channelSelect.innerHTML = '<option value="">-- Choose a channel --</option>';
+                for (const [key, ch] of Object.entries(state.channels)) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = ch.name;
+                    channelSelect.appendChild(opt);
                 }
+                // Add "Create new" option
+                const newOpt = document.createElement('option');
+                newOpt.value = '__new__';
+                newOpt.textContent = '➕ Create new channel';
+                channelSelect.appendChild(newOpt);
+            }
+
+            channelSelect.addEventListener('change', () => {
+                if (channelSelect.value === '__new__') {
+                    newChannelWrap.classList.remove('hidden');
+                    newChannelNameInput.focus();
+                } else {
+                    newChannelWrap.classList.add('hidden');
+                }
+            });
+
+            uploadBtn.onclick = () => {
+                populateChannelSelect();
                 const savedToken = localStorage.getItem('vapor_github_token');
                 if (savedToken) tokenInput.value = savedToken;
-                uploadModal.style.display = 'flex';
+                videoTitleInput.value = '';
+                fileInput.value = '';
+                newChannelWrap.classList.add('hidden');
                 uploadStatus.textContent = '';
+                uploadModal.style.display = 'flex';
             };
-            cancelUpload.onclick = () => { uploadModal.style.display = 'none'; fileInput.value = ''; customFilename.value = ''; };
-            uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) { uploadModal.style.display = 'none'; fileInput.value = ''; customFilename.value = ''; } });
+
+            cancelUpload.onclick = () => { uploadModal.style.display = 'none'; };
+            uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) uploadModal.style.display = 'none'; });
+
             confirmUpload.onclick = async () => {
                 const token = tokenInput.value.trim();
-                const channelKey = channelSelect.value;
+                const title = videoTitleInput.value.trim();
                 const file = fileInput.files[0];
-                if (!token || !channelKey || !file) {
-                    uploadStatus.textContent = '❌ Please fill all fields.';
+                const selectedChannel = channelSelect.value;
+
+                if (!token || !title || !file || !selectedChannel) {
+                    uploadStatus.textContent = '❌ Title, file, channel, and token are required.';
                     return;
                 }
                 if (!file.name.match(/\.(mp4|webm|mkv)$/i)) {
                     uploadStatus.textContent = '❌ Only .mp4, .webm, .mkv allowed.';
                     return;
                 }
+
+                // Determine channel folder name and key
+                let channelName, channelKey;
+                if (selectedChannel === '__new__') {
+                    channelName = newChannelNameInput.value.trim();
+                    if (!channelName) {
+                        uploadStatus.textContent = '❌ Enter a name for the new channel.';
+                        return;
+                    }
+                    channelKey = channelName.toLowerCase().replace(/\s+/g, '_');
+                } else {
+                    channelName = state.channels[selectedChannel].name;
+                    channelKey = selectedChannel;
+                }
+
+                // Generate filename from title: sanitize (alphanumeric, underscore) + original extension
+                const ext = file.name.substring(file.name.lastIndexOf('.'));
+                let sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+                if (!sanitizedTitle) sanitizedTitle = 'video';
+                const finalFilename = sanitizedTitle + ext;
+
                 localStorage.setItem('vapor_github_token', token);
                 uploadStatus.textContent = '⏳ Uploading...';
+
                 try {
                     const info = await getRepoInfo();
                     if (!info) throw new Error('Cannot detect repository.');
-                    const channelName = state.channels[channelKey].name;
-                    const rawFileName = file.name;
-                    const custom = customFilename.value.trim();
-                    let finalName = rawFileName;
-                    if (custom) {
-                        const ext = rawFileName.substring(rawFileName.lastIndexOf('.'));
-                        finalName = custom + ext;
-                    }
-                    const path = `video/${channelName}/${finalName}`;
+
+                    const path = `video/${channelName}/${finalFilename}`;
                     const reader = new FileReader();
                     const base64Content = await new Promise((resolve, reject) => {
                         reader.onload = () => resolve(reader.result.split(',')[1]);
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
+
                     const putUrl = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${path}`;
                     const body = {
-                        message: `Upload ${finalName} via VAPOR`,
+                        message: `Upload ${finalFilename} (${title}) via VAPOR`,
                         content: base64Content,
                         branch: info.branch
                     };
@@ -766,10 +804,9 @@
                         const errData = await putRes.json();
                         throw new Error(errData.message || `HTTP ${putRes.status}`);
                     }
+
                     uploadStatus.textContent = '✅ Upload successful! Reloading…';
                     localStorage.removeItem('vapor_channels_cache');
-                    fileInput.value = '';
-                    customFilename.value = '';
                     state.channels = await loadChannelsFromGitHub();
                     buildSidebarChannels();
                     if (state.currentView === 'home') renderHome();
@@ -783,7 +820,7 @@
             // Init
             mainContent.innerHTML = '<div class="loading">⏳ Loading channels from GitHub…</div>';
             try {
-                await getRepoInfo(); // pre-fetch repo info for video URLs
+                await getRepoInfo();
                 state.channels = await loadChannelsFromGitHub();
                 buildSidebarChannels();
                 const hash = window.location.hash.replace('#', '');
