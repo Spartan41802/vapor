@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — Minimal</title>
+    <title>VAPOR — Dynamic</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -15,611 +15,115 @@
             --text2: #9a9a9a;
             --text3: #6b6b6b;
             --accent: #3ea6ff;
-            --accent-hover: #5ab5ff;
             --radius: 8px;
             --radius-sm: 6px;
             --transition: 0.2s ease;
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { font-size:15px; scroll-behavior:smooth; }
+        body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; display:flex; flex-direction:column; overflow-x:hidden; }
+        ::-webkit-scrollbar { width:6px; height:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#333; border-radius:3px; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html {
-            font-size: 15px;
-            scroll-behavior: smooth;
-        }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            letter-spacing: 0.01em;
-            -webkit-font-smoothing: antialiased;
-        }
+        #header { position:sticky; top:0; z-index:100; display:flex; align-items:center; gap:14px; padding:10px 20px; background:var(--bg2); border-bottom:1px solid var(--border); height:58px; }
+        #menuBtn { background:none; border:none; color:var(--text); font-size:1.3rem; cursor:pointer; padding:6px 10px; border-radius:4px; line-height:1; transition:background var(--transition); }
+        #menuBtn:hover { background:var(--bg3); }
+        #logo { display:flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none; user-select:none; flex-shrink:0; }
+        #logo .icon { width:30px; height:30px; border-radius:4px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:#fff; font-weight:bold; }
+        #logo .text { font-size:1.2rem; font-weight:700; color:var(--text); letter-spacing:0.05em; }
+        #searchWrap { flex:1; max-width:480px; display:flex; align-items:center; background:var(--bg3); border-radius:30px; overflow:hidden; border:1px solid transparent; transition:border-color var(--transition); margin:0 auto; }
+        #searchWrap:focus-within { border-color:var(--accent); }
+        #searchInput { flex:1; background:transparent; border:none; color:var(--text); padding:10px 16px; font-size:0.9rem; outline:none; }
+        #searchInput::placeholder { color:var(--text3); }
+        #searchBtn { background:transparent; border:none; color:var(--text2); padding:10px 16px; cursor:pointer; font-size:0.95rem; transition:color var(--transition); border-left:1px solid var(--border); }
+        #searchBtn:hover { color:var(--accent); }
+        #headerActions { display:flex; gap:4px; flex-shrink:0; }
+        #headerActions button { background:var(--bg3); border:none; color:var(--text); width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1rem; transition:background var(--transition); display:flex; align-items:center; justify-content:center; }
+        #headerActions button:hover { background:#333; }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 3px;
-        }
+        #appLayout { display:flex; flex:1; min-height:0; }
+        #sidebar { width:200px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); padding:10px 0; overflow-y:auto; transition:width 0.2s; }
+        #sidebar.collapsed { width:56px; }
+        #sidebar.collapsed .sidebar-label { display:none; }
+        #sidebar.collapsed .sidebar-item { justify-content:center; padding:10px 6px; }
+        .sidebar-item { display:flex; align-items:center; gap:12px; padding:10px 16px; cursor:pointer; color:var(--text2); font-size:0.85rem; font-weight:500; transition:background var(--transition), color var(--transition); white-space:nowrap; border-left:3px solid transparent; }
+        .sidebar-item:hover { background:rgba(255,255,255,0.04); color:var(--text); }
+        .sidebar-item.active { color:var(--accent); background:rgba(62,166,255,0.08); border-left-color:var(--accent); font-weight:600; }
+        .sidebar-icon { font-size:1rem; flex-shrink:0; width:20px; text-align:center; }
+        .sidebar-divider { border-top:1px solid var(--border); margin:8px 14px; }
+        .sidebar-section-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); padding:6px 16px; font-weight:700; }
+        #sidebar.collapsed .sidebar-section-title, #sidebar.collapsed .sidebar-divider { display:none; }
 
-        /* Header */
-        #header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 20px;
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
-            height: 58px;
-        }
-        #menuBtn {
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 1.3rem;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 4px;
-            line-height: 1;
-            transition: background var(--transition);
-        }
-        #menuBtn:hover {
-            background: var(--bg3);
-        }
-        #logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            user-select: none;
-            flex-shrink: 0;
-        }
-        #logo .icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            background: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            color: #fff;
-            font-weight: bold;
-        }
-        #logo .text {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: 0.05em;
-        }
-        #searchWrap {
-            flex: 1;
-            max-width: 480px;
-            display: flex;
-            align-items: center;
-            background: var(--bg3);
-            border-radius: 30px;
-            overflow: hidden;
-            border: 1px solid transparent;
-            transition: border-color var(--transition);
-            margin: 0 auto;
-        }
-        #searchWrap:focus-within {
-            border-color: var(--accent);
-        }
-        #searchInput {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text);
-            padding: 10px 16px;
-            font-size: 0.9rem;
-            outline: none;
-        }
-        #searchInput::placeholder {
-            color: var(--text3);
-        }
-        #searchBtn {
-            background: transparent;
-            border: none;
-            color: var(--text2);
-            padding: 10px 16px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            transition: color var(--transition);
-            border-left: 1px solid var(--border);
-        }
-        #searchBtn:hover {
-            color: var(--accent);
-        }
-        #headerActions {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-        #headerActions button {
-            background: var(--bg3);
-            border: none;
-            color: var(--text);
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #headerActions button:hover {
-            background: #333;
-        }
+        #mainContent { flex:1; overflow-y:auto; padding:20px 24px 40px; min-width:0; }
+        .section-title { font-size:1.1rem; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+        .video-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
+        .video-card { background:var(--surface); border-radius:var(--radius); overflow:hidden; cursor:pointer; transition:background var(--transition); border:1px solid transparent; }
+        .video-card:hover { background:#282828; border-color:var(--border); }
+        .thumbnail-wrap { position:relative; width:100%; aspect-ratio:16/9; background:#1f1f1f; overflow:hidden; }
+        .thumbnail-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:700; color:#555; background:#191919; }
+        .video-duration { position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.8); color:#fff; padding:2px 6px; border-radius:3px; font-size:0.7rem; font-weight:600; }
+        .video-info { padding:10px 12px; display:flex; gap:10px; }
+        .channel-avatar-sm { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:bold; color:#fff; background:#444; }
+        .video-meta { flex:1; min-width:0; }
+        .video-title { font-weight:500; font-size:0.85rem; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin-bottom:4px; }
+        .video-channel { font-size:0.75rem; color:var(--text2); }
+        .video-stats { font-size:0.7rem; color:var(--text3); margin-top:1px; }
 
-        /* Layout */
-        #appLayout {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-        }
-        #sidebar {
-            width: 200px;
-            flex-shrink: 0;
-            background: var(--bg2);
-            border-right: 1px solid var(--border);
-            padding: 10px 0;
-            overflow-y: auto;
-            transition: width 0.2s;
-        }
-        #sidebar.collapsed {
-            width: 56px;
-        }
-        #sidebar.collapsed .sidebar-label {
-            display: none;
-        }
-        #sidebar.collapsed .sidebar-item {
-            justify-content: center;
-            padding: 10px 6px;
-        }
-        .sidebar-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-            cursor: pointer;
-            color: var(--text2);
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: background var(--transition), color var(--transition);
-            white-space: nowrap;
-            border-left: 3px solid transparent;
-        }
-        .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text);
-        }
-        .sidebar-item.active {
-            color: var(--accent);
-            background: rgba(62, 166, 255, 0.08);
-            border-left-color: var(--accent);
-            font-weight: 600;
-        }
-        .sidebar-icon {
-            font-size: 1rem;
-            flex-shrink: 0;
-            width: 20px;
-            text-align: center;
-        }
-        .sidebar-divider {
-            border-top: 1px solid var(--border);
-            margin: 8px 14px;
-        }
-        .sidebar-section-title {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--text3);
-            padding: 6px 16px;
-            font-weight: 700;
-        }
-        #sidebar.collapsed .sidebar-section-title,
-        #sidebar.collapsed .sidebar-divider {
-            display: none;
-        }
+        .channel-header { display:flex; align-items:center; gap:16px; padding:20px; background:var(--surface); border-radius:var(--radius); margin-bottom:20px; border:1px solid var(--border); flex-wrap:wrap; }
+        .channel-avatar-lg { width:60px; height:60px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:bold; color:#fff; background:#444; }
+        .channel-info h1 { font-size:1.3rem; font-weight:600; margin-bottom:2px; }
+        .channel-info p { color:var(--text2); font-size:0.8rem; }
+        .subscribe-btn { margin-left:auto; padding:8px 20px; border-radius:30px; font-weight:600; font-size:0.85rem; cursor:pointer; border:none; background:var(--accent); color:#fff; transition:background var(--transition); }
+        .subscribe-btn.subscribed { background:var(--bg3); color:var(--text2); }
 
-        /* Main */
-        #mainContent {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 24px 40px;
-            min-width: 0;
-        }
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 16px;
-        }
-        .video-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            overflow: hidden;
-            cursor: pointer;
-            transition: background var(--transition);
-            border: 1px solid transparent;
-        }
-        .video-card:hover {
-            background: #282828;
-            border-color: var(--border);
-        }
-        .thumbnail-wrap {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #1f1f1f;
-            overflow: hidden;
-        }
-        .thumbnail-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            color: #555;
-            background: #191919;
-        }
-        .video-duration {
-            position: absolute;
-            bottom: 6px;
-            right: 6px;
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .video-info {
-            padding: 10px 12px;
-            display: flex;
-            gap: 10px;
-        }
-        .channel-avatar-sm {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #fff;
-            background: #444;
-        }
-        .video-meta {
-            flex: 1;
-            min-width: 0;
-        }
-        .video-title {
-            font-weight: 500;
-            font-size: 0.85rem;
-            line-height: 1.3;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            margin-bottom: 4px;
-        }
-        .video-channel {
-            font-size: 0.75rem;
-            color: var(--text2);
-        }
-        .video-stats {
-            font-size: 0.7rem;
-            color: var(--text3);
-            margin-top: 1px;
-        }
+        .watch-layout { display:flex; gap:20px; flex-wrap:wrap; }
+        .watch-main { flex:1; min-width:0; }
+        .watch-sidebar { width:320px; flex-shrink:0; }
+        .player-wrap { background:#000; border-radius:var(--radius); overflow:hidden; margin-bottom:16px; aspect-ratio:16/9; }
+        .player-wrap video { width:100%; height:100%; display:block; }
+        .watch-title { font-size:1.15rem; font-weight:600; margin-bottom:10px; }
+        .watch-meta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
+        .watch-channel-info { display:flex; align-items:center; gap:10px; cursor:pointer; }
+        .action-btns { display:flex; gap:8px; }
+        .action-btn { display:flex; align-items:center; gap:5px; padding:7px 14px; border-radius:30px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:0.8rem; font-weight:500; transition:background var(--transition); }
+        .action-btn:hover { background:#333; }
+        .action-btn.liked { background:rgba(62,166,255,0.15); border-color:var(--accent); color:var(--accent); }
+        .watch-description { background:var(--surface); border-radius:var(--radius); padding:12px 14px; font-size:0.8rem; color:var(--text2); line-height:1.5; white-space:pre-wrap; border:1px solid var(--border); margin-bottom:16px; max-height:130px; overflow-y:auto; }
+        .comments-section { margin-top:8px; }
+        .comments-section h3 { font-size:0.95rem; font-weight:600; margin-bottom:8px; }
+        .comment-input-wrap { display:flex; gap:8px; margin-bottom:12px; }
+        .comment-input-wrap input { flex:1; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:20px; font-size:0.8rem; outline:none; }
+        .comment-input-wrap input:focus { border-color:var(--accent); }
+        .comment-input-wrap button { background:var(--accent); border:none; color:#fff; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:600; font-size:0.8rem; }
+        .comment-input-wrap button:hover { background:#5ab5ff; }
+        .comment { display:flex; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .comment-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:bold; color:#fff; background:#444; }
+        .comment-body { flex:1; }
+        .comment-user { font-weight:600; font-size:0.75rem; margin-bottom:2px; }
+        .comment-text { font-size:0.78rem; color:var(--text2); line-height:1.4; }
+        .comment-time { font-size:0.7rem; color:var(--text3); }
+        .related-video-card { display:flex; gap:10px; cursor:pointer; padding:8px; border-radius:var(--radius-sm); transition:background var(--transition); }
+        .related-video-card:hover { background:var(--bg3); }
+        .related-thumb { width:140px; aspect-ratio:16/9; border-radius:var(--radius-sm); overflow:hidden; background:#1f1f1f; flex-shrink:0; }
+        .related-thumb .thumbnail-placeholder { font-size:1rem; }
+        .related-info .video-title { font-size:0.78rem; }
 
-        /* Channel page */
-        .channel-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 20px;
-            background: var(--surface);
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-        }
-        .channel-avatar-lg {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #fff;
-            background: #444;
-        }
-        .channel-info h1 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        .channel-info p {
-            color: var(--text2);
-            font-size: 0.8rem;
-        }
-        .subscribe-btn {
-            margin-left: auto;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: none;
-            transition: background var(--transition);
-            background: var(--accent);
-            color: #fff;
-        }
-        .subscribe-btn.subscribed {
-            background: var(--bg3);
-            color: var(--text2);
-        }
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
+        .empty-state .icon { font-size:3rem; margin-bottom:12px; opacity:0.5; }
+        .empty-state h2 { font-size:1.2rem; color:var(--text2); margin-bottom:6px; }
+        .loading { text-align:center; padding:60px; color:var(--text3); }
 
-        /* Watch page */
-        .watch-layout {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+        @media (max-width:800px) {
+            #sidebar { width:160px; }
+            #sidebar.collapsed { width:48px; }
+            .watch-sidebar { width:100%; }
+            .video-grid { grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
         }
-        .watch-main {
-            flex: 1;
-            min-width: 0;
-        }
-        .watch-sidebar {
-            width: 320px;
-            flex-shrink: 0;
-        }
-        .player-wrap {
-            background: #000;
-            border-radius: var(--radius);
-            overflow: hidden;
-            margin-bottom: 16px;
-            aspect-ratio: 16/9;
-        }
-        .player-wrap video {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        .watch-title {
-            font-size: 1.15rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .watch-meta-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        .watch-channel-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-        .action-btns {
-            display: flex;
-            gap: 8px;
-        }
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 7px 14px;
-            border-radius: 30px;
-            border: 1px solid var(--border);
-            background: var(--bg3);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: background var(--transition);
-        }
-        .action-btn:hover {
-            background: #333;
-        }
-        .action-btn.liked {
-            background: rgba(62,166,255,0.15);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .watch-description {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 12px 14px;
-            font-size: 0.8rem;
-            color: var(--text2);
-            line-height: 1.5;
-            white-space: pre-wrap;
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
-            max-height: 130px;
-            overflow-y: auto;
-        }
-        .comments-section {
-            margin-top: 8px;
-        }
-        .comments-section h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .comment-input-wrap {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .comment-input-wrap input {
-            flex: 1;
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            outline: none;
-        }
-        .comment-input-wrap input:focus {
-            border-color: var(--accent);
-        }
-        .comment-input-wrap button {
-            background: var(--accent);
-            border: none;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.8rem;
-            transition: background var(--transition);
-        }
-        .comment-input-wrap button:hover {
-            background: var(--accent-hover);
-        }
-        .comment {
-            display: flex;
-            gap: 8px;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .comment-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: bold;
-            color: #fff;
-            background: #444;
-        }
-        .comment-body {
-            flex: 1;
-        }
-        .comment-user {
-            font-weight: 600;
-            font-size: 0.75rem;
-            margin-bottom: 2px;
-        }
-        .comment-text {
-            font-size: 0.78rem;
-            color: var(--text2);
-            line-height: 1.4;
-        }
-        .comment-time {
-            font-size: 0.7rem;
-            color: var(--text3);
-        }
-        .related-video-card {
-            display: flex;
-            gap: 10px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: var(--radius-sm);
-            transition: background var(--transition);
-        }
-        .related-video-card:hover {
-            background: var(--bg3);
-        }
-        .related-thumb {
-            width: 140px;
-            aspect-ratio: 16/9;
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-            background: #1f1f1f;
-            flex-shrink: 0;
-        }
-        .related-thumb .thumbnail-placeholder {
-            font-size: 1rem;
-        }
-        .related-info .video-title {
-            font-size: 0.78rem;
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text3);
-        }
-        .empty-state .icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-        .empty-state h2 {
-            font-size: 1.2rem;
-            color: var(--text2);
-            margin-bottom: 6px;
-        }
-
-        @media (max-width: 800px) {
-            #sidebar {
-                width: 160px;
-            }
-            #sidebar.collapsed {
-                width: 48px;
-            }
-            .watch-sidebar {
-                width: 100%;
-            }
-            .video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            }
-        }
-        @media (max-width: 500px) {
-            #sidebar {
-                width: 140px;
-            }
-            .video-grid {
-                grid-template-columns: 1fr;
-            }
+        @media (max-width:500px) {
+            #sidebar { width:140px; }
+            .video-grid { grid-template-columns:1fr; }
         }
     </style>
 </head>
@@ -660,474 +164,539 @@
     </div>
 
     <script>
-        // ============================================================
-        //  YOUR CHANNELS — Add your own channel folders here.
-        //  Place .mp4 files inside /video/your-channel-name/
-        //  Example structure:
-        //  {
-        //    "my_channel": {
-        //      name: "My Channel",
-        //      avatar: "M",          // single character or emoji
-        //      description: "Cool videos.",
-        //      videos: [
-        //        { file: "video1.mp4", title: "My First Video", duration: "2:30", views: "120", date: "2 days ago",
-        //          description: "Description of the video." },
-        //        { file: "video2.mp4", title: "Another Video", duration: "4:15", views: "80", date: "1 week ago",
-        //          description: "Another description." }
-        //      ]
-        //    }
-        //  }
-        // ============================================================
-        const CHANNELS = {
-            // Uncomment and edit the example below, or add your own.
-            // "example_channel": {
-            //     name: "Example Channel",
-            //     avatar: "E",
-            //     description: "A sample channel.",
-            //     videos: [
-            //         { file: "sample.mp4", title: "Sample Video", duration: "0:30", views: "10", date: "just now",
-            //           description: "This is a test." }
-            //     ]
-            // }
-        };
+        (async function() {
+            // ----- DOM refs -----
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+            const mainContent = $('#mainContent');
+            const sidebar = $('#sidebar');
+            const sidebarChannels = $('#sidebarChannels');
+            const searchInput = $('#searchInput');
+            const menuBtn = $('#menuBtn');
+            const logo = $('#logo');
+            const searchBtn = $('#searchBtn');
 
-        // ----- State -----
-        const state = {
-            currentView: 'home',
-            currentChannel: null,
-            currentVideoIndex: null,
-            sidebarOpen: true,
-            searchQuery: '',
-            likedVideos: {},
-            subscribedChannels: {},
-            comments: {},
-            watchHistory: [],
-        };
-
-        const $ = (sel) => document.querySelector(sel);
-        const $$ = (sel) => document.querySelectorAll(sel);
-        const mainContent = $('#mainContent');
-        const sidebar = $('#sidebar');
-        const sidebarChannels = $('#sidebarChannels');
-        const searchInput = $('#searchInput');
-        const menuBtn = $('#menuBtn');
-        const logo = $('#logo');
-        const searchBtn = $('#searchBtn');
-
-        // ----- Helpers -----
-        function getAllVideos() {
-            const all = [];
-            for (const [key, ch] of Object.entries(CHANNELS)) {
-                ch.videos.forEach((v, i) => {
-                    all.push({ ...v, channelKey: key, channelName: ch.name, avatar: ch.avatar, videoIndex: i });
-                });
-            }
-            return all;
-        }
-
-        function getVideoPath(channelKey, file) {
-            return `video/${channelKey}/${file}`;
-        }
-
-        function timeAgo(str) { return str; }
-
-        // ----- Render functions -----
-        function renderHome() {
-            mainContent.innerHTML = '';
-            const all = getAllVideos();
-            let filtered = all;
-            if (state.searchQuery.trim()) {
-                const q = state.searchQuery.toLowerCase();
-                filtered = all.filter(v => v.title.toLowerCase().includes(q) || v.channelName.toLowerCase().includes(q));
-            }
-
-            if (Object.keys(CHANNELS).length === 0) {
-                mainContent.innerHTML = `<div class="empty-state">
-                    <div class="icon">📭</div>
-                    <h2>No channels yet</h2>
-                    <p>Add your channel folder inside <code>/video/</code> and update the <code>CHANNELS</code> object in this file.</p>
-                </div>`;
-                return;
-            }
-
-            if (filtered.length === 0) {
-                mainContent.innerHTML = `<div class="empty-state">
-                    <div class="icon">🔍</div><h2>No results</h2><p>Try a different search.</p>
-                </div>`;
-                return;
-            }
-
-            const title = document.createElement('div');
-            title.className = 'section-title';
-            title.textContent = state.searchQuery.trim() ? `Results for "${state.searchQuery}"` : 'All videos';
-            mainContent.appendChild(title);
-
-            const grid = document.createElement('div');
-            grid.className = 'video-grid';
-            filtered.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
-            mainContent.appendChild(grid);
-        }
-
-        function createVideoCard(video, channelKey, idx) {
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            card.addEventListener('click', () => navigateToWatch(channelKey, idx));
-            const thumb = document.createElement('div');
-            thumb.className = 'thumbnail-wrap';
-            const ph = document.createElement('div');
-            ph.className = 'thumbnail-placeholder';
-            ph.textContent = video.title.charAt(0).toUpperCase();
-            thumb.appendChild(ph);
-            if (video.duration) {
-                const d = document.createElement('span');
-                d.className = 'video-duration';
-                d.textContent = video.duration;
-                thumb.appendChild(d);
-            }
-            card.appendChild(thumb);
-
-            const info = document.createElement('div');
-            info.className = 'video-info';
-            const av = document.createElement('div');
-            av.className = 'channel-avatar-sm';
-            av.textContent = (CHANNELS[channelKey]?.avatar || video.channelName?.charAt(0) || '?').toUpperCase();
-            info.appendChild(av);
-
-            const meta = document.createElement('div');
-            meta.className = 'video-meta';
-            meta.innerHTML = `<div class="video-title">${video.title}</div>
-                <div class="video-channel">${video.channelName}</div>
-                <div class="video-stats">${video.views || '0'} views · ${video.date || ''}</div>`;
-            info.appendChild(meta);
-            card.appendChild(info);
-            return card;
-        }
-
-        function renderChannel(channelKey) {
-            mainContent.innerHTML = '';
-            const ch = CHANNELS[channelKey];
-            if (!ch) { navigateToHome(); return; }
-
-            const header = document.createElement('div');
-            header.className = 'channel-header';
-            const av = document.createElement('div');
-            av.className = 'channel-avatar-lg';
-            av.textContent = (ch.avatar || ch.name.charAt(0)).toUpperCase();
-            header.appendChild(av);
-            const inf = document.createElement('div');
-            inf.className = 'channel-info';
-            inf.innerHTML = `<h1>${ch.name}</h1><p>${ch.description || ''}</p>`;
-            header.appendChild(inf);
-            const sub = document.createElement('button');
-            sub.className = 'subscribe-btn' + (state.subscribedChannels[channelKey] ? ' subscribed' : '');
-            sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
-            sub.onclick = (e) => {
-                e.stopPropagation();
-                state.subscribedChannels[channelKey] = !state.subscribedChannels[channelKey];
-                sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
-                sub.classList.toggle('subscribed', state.subscribedChannels[channelKey]);
+            // ----- State -----
+            const state = {
+                currentView: 'home',
+                currentChannel: null,
+                currentVideoIndex: null,
+                sidebarOpen: true,
+                searchQuery: '',
+                likedVideos: {},
+                subscribedChannels: {},
+                comments: {},
+                watchHistory: [],
+                channels: {}  // populated dynamically
             };
-            header.appendChild(sub);
-            mainContent.appendChild(header);
 
-            const grid = document.createElement('div');
-            grid.className = 'video-grid';
-            ch.videos.forEach((v, i) => {
-                const vd = { ...v, channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: i };
-                grid.appendChild(createVideoCard(vd, channelKey, i));
-            });
-            mainContent.appendChild(grid);
-        }
-
-        function renderWatch(channelKey, idx) {
-            mainContent.innerHTML = '';
-            const ch = CHANNELS[channelKey];
-            if (!ch || !ch.videos[idx]) { navigateToHome(); return; }
-            const video = ch.videos[idx];
-            const commentKey = `${channelKey}|${idx}`;
-            if (!state.comments[commentKey]) state.comments[commentKey] = [];
-            state.watchHistory.unshift({ channelKey, videoIndex: idx, title: video.title, channelName: ch.name, ts: Date.now() });
-            if (state.watchHistory.length > 50) state.watchHistory.length = 50;
-
-            const layout = document.createElement('div');
-            layout.className = 'watch-layout';
-            const main = document.createElement('div');
-            main.className = 'watch-main';
-
-            const player = document.createElement('div');
-            player.className = 'player-wrap';
-            const vid = document.createElement('video');
-            vid.src = getVideoPath(channelKey, video.file);
-            vid.controls = true;
-            vid.playsInline = true;
-            player.appendChild(vid);
-            main.appendChild(player);
-
-            const title = document.createElement('h1');
-            title.className = 'watch-title';
-            title.textContent = video.title;
-            main.appendChild(title);
-
-            const metaRow = document.createElement('div');
-            metaRow.className = 'watch-meta-row';
-            const chInfo = document.createElement('div');
-            chInfo.className = 'watch-channel-info';
-            chInfo.style.cursor = 'pointer';
-            chInfo.innerHTML = `<div class="channel-avatar-sm" style="background:#444;">${(ch.avatar || ch.name.charAt(0)).toUpperCase()}</div><span style="font-weight:500;">${ch.name}</span>`;
-            chInfo.onclick = () => navigateToChannel(channelKey);
-            metaRow.appendChild(chInfo);
-            const actions = document.createElement('div');
-            actions.className = 'action-btns';
-            const likeBtn = document.createElement('button');
-            likeBtn.className = 'action-btn' + (state.likedVideos[commentKey] ? ' liked' : '');
-            likeBtn.innerHTML = (state.likedVideos[commentKey] ? '❤️ ' : '🤍 ') + 'Like';
-            likeBtn.onclick = () => {
-                state.likedVideos[commentKey] = !state.likedVideos[commentKey];
-                likeBtn.classList.toggle('liked', state.likedVideos[commentKey]);
-                likeBtn.innerHTML = (state.likedVideos[commentKey] ? '❤️ ' : '🤍 ') + 'Like';
-            };
-            actions.appendChild(likeBtn);
-            const share = document.createElement('button');
-            share.className = 'action-btn';
-            share.textContent = '🔗 Share';
-            share.onclick = () => {
-                const url = `${location.origin}${location.pathname}?watch=${channelKey}&v=${idx}`;
-                navigator.clipboard.writeText(url).then(() => {
-                    share.textContent = '✅ Copied';
-                    setTimeout(() => share.textContent = '🔗 Share', 1500);
-                });
-            };
-            actions.appendChild(share);
-            metaRow.appendChild(actions);
-            main.appendChild(metaRow);
-
-            const desc = document.createElement('div');
-            desc.className = 'watch-description';
-            desc.textContent = video.description || '';
-            main.appendChild(desc);
-
-            const comments = document.createElement('div');
-            comments.className = 'comments-section';
-            comments.innerHTML = '<h3>Comments</h3>';
-            const inputWrap = document.createElement('div');
-            inputWrap.className = 'comment-input-wrap';
-            const inp = document.createElement('input');
-            inp.placeholder = 'Add a comment...';
-            const post = document.createElement('button');
-            post.textContent = 'Post';
-            post.onclick = () => {
-                if (!inp.value.trim()) return;
-                state.comments[commentKey].push({ user: 'You', text: inp.value.trim(), time: 'just now' });
-                inp.value = '';
-                renderCommentsList(listEl, commentKey);
-            };
-            inputWrap.appendChild(inp);
-            inputWrap.appendChild(post);
-            comments.appendChild(inputWrap);
-            const listEl = document.createElement('div');
-            comments.appendChild(listEl);
-            renderCommentsList(listEl, commentKey);
-            main.appendChild(comments);
-
-            layout.appendChild(main);
-
-            const sidebarWatch = document.createElement('div');
-            sidebarWatch.className = 'watch-sidebar';
-            sidebarWatch.innerHTML = '<div class="section-title">Related</div>';
-            const related = getAllVideos().filter(v => !(v.channelKey === channelKey && v.videoIndex === idx)).slice(0, 6);
-            related.forEach(rv => {
-                const rc = document.createElement('div');
-                rc.className = 'related-video-card';
-                rc.onclick = () => navigateToWatch(rv.channelKey, rv.videoIndex);
-                rc.innerHTML = `<div class="related-thumb"><div class="thumbnail-placeholder" style="background:#1f1f1f;color:#555;">${rv.title.charAt(0)}</div></div>
-                <div class="related-info"><div class="video-title">${rv.title}</div><div class="video-channel">${rv.channelName}</div></div>`;
-                sidebarWatch.appendChild(rc);
-            });
-            layout.appendChild(sidebarWatch);
-            mainContent.appendChild(layout);
-            window.location.hash = `watch=${channelKey}&v=${idx}`;
-        }
-
-        function renderCommentsList(container, key) {
-            container.innerHTML = '';
-            const list = state.comments[key] || [];
-            if (!list.length) {
-                container.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;padding:8px 0;">No comments yet.</div>';
-                return;
-            }
-            list.slice().reverse().forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'comment';
-                div.innerHTML = `<div class="comment-avatar">${c.user.charAt(0).toUpperCase()}</div>
-                <div class="comment-body"><div class="comment-user">${c.user}</div><div class="comment-text">${c.text}</div><div class="comment-time">${c.time}</div></div>`;
-                container.appendChild(div);
-            });
-        }
-
-        function renderTrending() {
-            mainContent.innerHTML = '';
-            const sorted = getAllVideos().sort((a, b) => (parseInt(b.views)||0) - (parseInt(a.views)||0));
-            if (!sorted.length) {
-                mainContent.innerHTML = '<div class="empty-state"><div class="icon">📊</div><h2>No videos</h2></div>';
-                return;
-            }
-            const t = document.createElement('div');
-            t.className = 'section-title';
-            t.textContent = 'Trending';
-            mainContent.appendChild(t);
-            const grid = document.createElement('div');
-            grid.className = 'video-grid';
-            sorted.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
-            mainContent.appendChild(grid);
-        }
-
-        function renderLibrary() {
-            mainContent.innerHTML = '';
-            if (!state.watchHistory.length) {
-                mainContent.innerHTML = '<div class="empty-state"><div class="icon">📂</div><h2>No history</h2></div>';
-                return;
-            }
-            const t = document.createElement('div');
-            t.className = 'section-title';
-            t.textContent = 'Watch history';
-            mainContent.appendChild(t);
-            const grid = document.createElement('div');
-            grid.className = 'video-grid';
-            state.watchHistory.forEach(h => {
-                const ch = CHANNELS[h.channelKey];
-                if (!ch) return;
-                const v = { ...ch.videos[h.videoIndex], channelKey: h.channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: h.videoIndex };
-                grid.appendChild(createVideoCard(v, h.channelKey, h.videoIndex));
-            });
-            mainContent.appendChild(grid);
-        }
-
-        // ----- Navigation -----
-        function navigateToHome() {
-            state.currentView = 'home';
-            state.currentChannel = null;
-            window.location.hash = '';
-            updateActive();
-            renderHome();
-        }
-        function navigateToChannel(key) {
-            state.currentView = 'channel';
-            state.currentChannel = key;
-            window.location.hash = `channel=${key}`;
-            updateActive();
-            renderChannel(key);
-        }
-        function navigateToWatch(key, idx) {
-            state.currentView = 'watch';
-            state.currentChannel = key;
-            state.currentVideoIndex = idx;
-            updateActive();
-            renderWatch(key, idx);
-        }
-        function navigateToTrending() {
-            state.currentView = 'trending';
-            window.location.hash = 'trending';
-            updateActive();
-            renderTrending();
-        }
-        function navigateToLibrary() {
-            state.currentView = 'library';
-            window.location.hash = 'library';
-            updateActive();
-            renderLibrary();
-        }
-        function updateActive() {
-            $$('.sidebar-item').forEach(el => el.classList.remove('active'));
-            if (state.currentView === 'channel' && state.currentChannel) {
-                const el = sidebar.querySelector(`[data-channel="${state.currentChannel}"]`);
-                if (el) el.classList.add('active');
-            } else {
-                const map = { home: 'home', trending: 'trending', library: 'library' };
-                const sel = sidebar.querySelector(`[data-nav="${map[state.currentView]}"]`);
-                if (sel) sel.classList.add('active');
-            }
-        }
-
-        // ----- Sidebar channels -----
-        function buildSidebarChannels() {
-            sidebarChannels.innerHTML = '';
-            for (const [key, ch] of Object.entries(CHANNELS)) {
-                const item = document.createElement('div');
-                item.className = 'sidebar-item';
-                item.dataset.channel = key;
-                item.innerHTML = `<span class="sidebar-icon">${ch.avatar || '📁'}</span><span class="sidebar-label">${ch.name}</span>`;
-                item.onclick = () => navigateToChannel(key);
-                sidebarChannels.appendChild(item);
-            }
-        }
-
-        // ----- Event handlers -----
-        menuBtn.onclick = () => {
-            state.sidebarOpen = !state.sidebarOpen;
-            sidebar.classList.toggle('collapsed', !state.sidebarOpen);
-        };
-        logo.onclick = navigateToHome;
-        searchBtn.onclick = () => {
-            state.searchQuery = searchInput.value.trim();
-            navigateToHome();
-        };
-        searchInput.onkeydown = (e) => { if (e.key === 'Enter') searchBtn.click(); };
-        sidebar.addEventListener('click', (e) => {
-            const item = e.target.closest('.sidebar-item');
-            if (!item) return;
-            const nav = item.dataset.nav;
-            if (nav === 'home') navigateToHome();
-            else if (nav === 'trending') navigateToTrending();
-            else if (nav === 'library') navigateToLibrary();
-        });
-        $('#headerActions').addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            if (btn.title === 'Trending') navigateToTrending();
-            if (btn.title === 'Library') navigateToLibrary();
-        });
-        window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.replace('#', '');
-            if (hash.startsWith('watch=')) {
-                const p = new URLSearchParams(hash);
-                const key = p.get('watch');
-                const idx = parseInt(p.get('v'));
-                if (key && !isNaN(idx) && CHANNELS[key]?.videos[idx]) {
-                    state.currentView = 'watch';
-                    state.currentChannel = key;
-                    state.currentVideoIndex = idx;
-                    updateActive();
-                    renderWatch(key, idx);
+            // ----- GitHub API helpers -----
+            function getRepoInfo() {
+                // Try to extract owner/repo from GitHub Pages URL (username.github.io/repo)
+                const { hostname, pathname } = window.location;
+                const parts = pathname.split('/').filter(p => p);
+                if (hostname.endsWith('github.io')) {
+                    const owner = hostname.replace('.github.io', '');
+                    const repo = parts[0] || '';
+                    return { owner, repo };
                 }
-            } else if (hash.startsWith('channel=')) {
-                const key = hash.replace('channel=', '');
-                if (CHANNELS[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); }
-            } else if (hash === 'trending') navigateToTrending();
-            else if (hash === 'library') navigateToLibrary();
-            else navigateToHome();
-        });
+                // Fallback: maybe custom domain or local testing – prompt or assume?
+                // For demo, we can try to extract from path if it looks like /owner/repo/...
+                if (parts.length >= 2) {
+                    return { owner: parts[0], repo: parts[1] };
+                }
+                return null;
+            }
 
-        // Init
-        buildSidebarChannels();
-        const hash = window.location.hash.replace('#', '');
-        if (hash.startsWith('watch=')) {
-            const p = new URLSearchParams(hash);
-            const key = p.get('watch');
-            const idx = parseInt(p.get('v'));
-            if (key && !isNaN(idx) && CHANNELS[key]?.videos[idx]) {
+            async function fetchDirectoryContents(path) {
+                const info = getRepoInfo();
+                if (!info) throw new Error('Cannot detect repository from URL.');
+                const { owner, repo } = info;
+                const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    if (response.status === 403) throw new Error('GitHub API rate limit exceeded. Try again later.');
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+                return response.json();
+            }
+
+            function formatTitle(filename) {
+                // remove extension, replace hyphens/underscores with spaces, capitalize words
+                let name = filename.replace(/\.(mp4|webm|mkv)$/i, '');
+                name = name.replace(/[-_]+/g, ' ').trim();
+                if (!name) return 'Untitled';
+                return name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+            }
+
+            async function loadChannelsFromGitHub() {
+                // Check cache first (1 hour)
+                const cacheKey = 'vapor_channels_cache';
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    try {
+                        const { data, timestamp } = JSON.parse(cached);
+                        if (Date.now() - timestamp < 3600000) {
+                            return data;
+                        }
+                    } catch(e) {}
+                }
+
+                // Fetch video folder
+                const videoDirItems = await fetchDirectoryContents('video');
+                const channels = {};
+
+                // Only process directories
+                const dirs = Array.isArray(videoDirItems) ? videoDirItems.filter(item => item.type === 'dir') : [];
+                for (const dir of dirs) {
+                    const channelName = dir.name;
+                    const channelKey = channelName.toLowerCase().replace(/\s+/g, '_');
+                    const contents = await fetchDirectoryContents(`video/${channelName}`);
+                    const videos = [];
+                    if (Array.isArray(contents)) {
+                        for (const file of contents) {
+                            if (file.type === 'file' && file.name.match(/\.(mp4|webm|mkv)$/i)) {
+                                videos.push({
+                                    file: file.name,
+                                    title: formatTitle(file.name),
+                                    duration: '', // unknown
+                                    views: '0',
+                                    date: 'just now',
+                                    description: ''
+                                });
+                            }
+                        }
+                    }
+                    channels[channelKey] = {
+                        name: channelName,
+                        avatar: channelName.charAt(0).toUpperCase(),
+                        description: '',
+                        videos: videos
+                    };
+                }
+
+                // Save to cache
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: channels,
+                    timestamp: Date.now()
+                }));
+
+                return channels;
+            }
+
+            // ----- Helpers -----
+            function getAllVideos() {
+                const all = [];
+                for (const [key, ch] of Object.entries(state.channels)) {
+                    ch.videos.forEach((v, i) => {
+                        all.push({ ...v, channelKey: key, channelName: ch.name, avatar: ch.avatar, videoIndex: i });
+                    });
+                }
+                return all;
+            }
+
+            function getVideoPath(channelKey, file) {
+                // Use raw GitHub URL
+                const info = getRepoInfo();
+                if (info) {
+                    return `https://raw.githubusercontent.com/${info.owner}/${info.repo}/main/video/${channelKey}/${file}`;
+                }
+                // fallback relative (won't work on GitHub Pages usually)
+                return `video/${channelKey}/${file}`;
+            }
+
+            // ----- Render -----
+            function renderHome() {
+                mainContent.innerHTML = '';
+                const all = getAllVideos();
+                let filtered = all;
+                if (state.searchQuery.trim()) {
+                    const q = state.searchQuery.toLowerCase();
+                    filtered = all.filter(v => v.title.toLowerCase().includes(q) || v.channelName.toLowerCase().includes(q));
+                }
+                if (Object.keys(state.channels).length === 0) {
+                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory on GitHub.</p></div>`;
+                    return;
+                }
+                if (filtered.length === 0) {
+                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h2>No results</h2></div>`;
+                    return;
+                }
+                const title = document.createElement('div');
+                title.className = 'section-title';
+                title.textContent = state.searchQuery.trim() ? `Results for "${state.searchQuery}"` : 'All videos';
+                mainContent.appendChild(title);
+                const grid = document.createElement('div');
+                grid.className = 'video-grid';
+                filtered.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
+                mainContent.appendChild(grid);
+            }
+
+            function createVideoCard(video, channelKey, idx) {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = () => navigateToWatch(channelKey, idx);
+                const thumb = document.createElement('div');
+                thumb.className = 'thumbnail-wrap';
+                const ph = document.createElement('div');
+                ph.className = 'thumbnail-placeholder';
+                ph.textContent = video.title.charAt(0).toUpperCase();
+                thumb.appendChild(ph);
+                if (video.duration) {
+                    const d = document.createElement('span');
+                    d.className = 'video-duration';
+                    d.textContent = video.duration;
+                    thumb.appendChild(d);
+                }
+                card.appendChild(thumb);
+                const info = document.createElement('div');
+                info.className = 'video-info';
+                const av = document.createElement('div');
+                av.className = 'channel-avatar-sm';
+                av.textContent = (video.avatar || video.channelName?.charAt(0) || '?').toUpperCase();
+                info.appendChild(av);
+                const meta = document.createElement('div');
+                meta.className = 'video-meta';
+                meta.innerHTML = `<div class="video-title">${video.title}</div>
+                    <div class="video-channel">${video.channelName}</div>
+                    <div class="video-stats">${video.views} views · ${video.date}</div>`;
+                info.appendChild(meta);
+                card.appendChild(info);
+                return card;
+            }
+
+            function renderChannel(channelKey) {
+                mainContent.innerHTML = '';
+                const ch = state.channels[channelKey];
+                if (!ch) { navigateToHome(); return; }
+                const header = document.createElement('div');
+                header.className = 'channel-header';
+                const av = document.createElement('div');
+                av.className = 'channel-avatar-lg';
+                av.textContent = ch.avatar.toUpperCase();
+                header.appendChild(av);
+                const inf = document.createElement('div');
+                inf.className = 'channel-info';
+                inf.innerHTML = `<h1>${ch.name}</h1><p>${ch.description || ''}</p>`;
+                header.appendChild(inf);
+                const sub = document.createElement('button');
+                sub.className = 'subscribe-btn' + (state.subscribedChannels[channelKey] ? ' subscribed' : '');
+                sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
+                sub.onclick = (e) => {
+                    e.stopPropagation();
+                    state.subscribedChannels[channelKey] = !state.subscribedChannels[channelKey];
+                    sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
+                    sub.classList.toggle('subscribed', state.subscribedChannels[channelKey]);
+                };
+                header.appendChild(sub);
+                mainContent.appendChild(header);
+                const grid = document.createElement('div');
+                grid.className = 'video-grid';
+                ch.videos.forEach((v, i) => {
+                    const vd = { ...v, channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: i };
+                    grid.appendChild(createVideoCard(vd, channelKey, i));
+                });
+                mainContent.appendChild(grid);
+            }
+
+            function renderWatch(channelKey, idx) {
+                mainContent.innerHTML = '';
+                const ch = state.channels[channelKey];
+                if (!ch || !ch.videos[idx]) { navigateToHome(); return; }
+                const video = ch.videos[idx];
+                const commentKey = `${channelKey}|${idx}`;
+                if (!state.comments[commentKey]) state.comments[commentKey] = [];
+                state.watchHistory.unshift({ channelKey, videoIndex: idx, title: video.title, channelName: ch.name, ts: Date.now() });
+                if (state.watchHistory.length > 50) state.watchHistory.length = 50;
+
+                const layout = document.createElement('div');
+                layout.className = 'watch-layout';
+                const main = document.createElement('div');
+                main.className = 'watch-main';
+
+                const player = document.createElement('div');
+                player.className = 'player-wrap';
+                const vid = document.createElement('video');
+                vid.src = getVideoPath(channelKey, video.file);
+                vid.controls = true;
+                vid.playsInline = true;
+                player.appendChild(vid);
+                main.appendChild(player);
+
+                const title = document.createElement('h1');
+                title.className = 'watch-title';
+                title.textContent = video.title;
+                main.appendChild(title);
+
+                const metaRow = document.createElement('div');
+                metaRow.className = 'watch-meta-row';
+                const chInfo = document.createElement('div');
+                chInfo.className = 'watch-channel-info';
+                chInfo.style.cursor = 'pointer';
+                chInfo.innerHTML = `<div class="channel-avatar-sm">${ch.avatar.toUpperCase()}</div><span style="font-weight:500;">${ch.name}</span>`;
+                chInfo.onclick = () => navigateToChannel(channelKey);
+                metaRow.appendChild(chInfo);
+                const actions = document.createElement('div');
+                actions.className = 'action-btns';
+                const likeBtn = document.createElement('button');
+                likeBtn.className = 'action-btn' + (state.likedVideos[commentKey] ? ' liked' : '');
+                likeBtn.innerHTML = (state.likedVideos[commentKey] ? '❤️ ' : '🤍 ') + 'Like';
+                likeBtn.onclick = () => {
+                    state.likedVideos[commentKey] = !state.likedVideos[commentKey];
+                    likeBtn.classList.toggle('liked', state.likedVideos[commentKey]);
+                    likeBtn.innerHTML = (state.likedVideos[commentKey] ? '❤️ ' : '🤍 ') + 'Like';
+                };
+                actions.appendChild(likeBtn);
+                const share = document.createElement('button');
+                share.className = 'action-btn';
+                share.textContent = '🔗 Share';
+                share.onclick = () => {
+                    const url = `${location.origin}${location.pathname}?watch=${channelKey}&v=${idx}`;
+                    navigator.clipboard.writeText(url).then(() => {
+                        share.textContent = '✅ Copied';
+                        setTimeout(() => share.textContent = '🔗 Share', 1500);
+                    });
+                };
+                actions.appendChild(share);
+                metaRow.appendChild(actions);
+                main.appendChild(metaRow);
+
+                const desc = document.createElement('div');
+                desc.className = 'watch-description';
+                desc.textContent = video.description || 'No description.';
+                main.appendChild(desc);
+
+                const comments = document.createElement('div');
+                comments.className = 'comments-section';
+                comments.innerHTML = '<h3>Comments</h3>';
+                const inputWrap = document.createElement('div');
+                inputWrap.className = 'comment-input-wrap';
+                const inp = document.createElement('input');
+                inp.placeholder = 'Add a comment...';
+                const post = document.createElement('button');
+                post.textContent = 'Post';
+                post.onclick = () => {
+                    if (!inp.value.trim()) return;
+                    state.comments[commentKey].push({ user: 'You', text: inp.value.trim(), time: 'just now' });
+                    inp.value = '';
+                    renderCommentsList(listEl, commentKey);
+                };
+                inputWrap.appendChild(inp);
+                inputWrap.appendChild(post);
+                comments.appendChild(inputWrap);
+                const listEl = document.createElement('div');
+                comments.appendChild(listEl);
+                renderCommentsList(listEl, commentKey);
+                main.appendChild(comments);
+                layout.appendChild(main);
+
+                const sidebarWatch = document.createElement('div');
+                sidebarWatch.className = 'watch-sidebar';
+                sidebarWatch.innerHTML = '<div class="section-title">Related</div>';
+                const all = getAllVideos().filter(v => !(v.channelKey === channelKey && v.videoIndex === idx));
+                const related = all.slice(0, 6);
+                related.forEach(rv => {
+                    const rc = document.createElement('div');
+                    rc.className = 'related-video-card';
+                    rc.onclick = () => navigateToWatch(rv.channelKey, rv.videoIndex);
+                    rc.innerHTML = `<div class="related-thumb"><div class="thumbnail-placeholder">${rv.title.charAt(0)}</div></div>
+                    <div class="related-info"><div class="video-title">${rv.title}</div><div class="video-channel">${rv.channelName}</div></div>`;
+                    sidebarWatch.appendChild(rc);
+                });
+                layout.appendChild(sidebarWatch);
+                mainContent.appendChild(layout);
+                window.location.hash = `watch=${channelKey}&v=${idx}`;
+            }
+
+            function renderCommentsList(container, key) {
+                container.innerHTML = '';
+                const list = state.comments[key] || [];
+                if (!list.length) {
+                    container.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;padding:8px 0;">No comments yet.</div>';
+                    return;
+                }
+                list.slice().reverse().forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'comment';
+                    div.innerHTML = `<div class="comment-avatar">${c.user.charAt(0).toUpperCase()}</div>
+                    <div class="comment-body"><div class="comment-user">${c.user}</div><div class="comment-text">${c.text}</div><div class="comment-time">${c.time}</div></div>`;
+                    container.appendChild(div);
+                });
+            }
+
+            function renderTrending() {
+                mainContent.innerHTML = '';
+                const all = getAllVideos().sort((a,b) => (parseInt(b.views)||0) - (parseInt(a.views)||0));
+                if (!all.length) {
+                    mainContent.innerHTML = '<div class="empty-state"><div class="icon">📊</div><h2>No videos</h2></div>';
+                    return;
+                }
+                const t = document.createElement('div');
+                t.className = 'section-title';
+                t.textContent = 'Trending';
+                mainContent.appendChild(t);
+                const grid = document.createElement('div');
+                grid.className = 'video-grid';
+                all.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
+                mainContent.appendChild(grid);
+            }
+
+            function renderLibrary() {
+                mainContent.innerHTML = '';
+                if (!state.watchHistory.length) {
+                    mainContent.innerHTML = '<div class="empty-state"><div class="icon">📂</div><h2>No history</h2></div>';
+                    return;
+                }
+                const t = document.createElement('div');
+                t.className = 'section-title';
+                t.textContent = 'Watch history';
+                mainContent.appendChild(t);
+                const grid = document.createElement('div');
+                grid.className = 'video-grid';
+                state.watchHistory.forEach(h => {
+                    const ch = state.channels[h.channelKey];
+                    if (!ch) return;
+                    const v = { ...ch.videos[h.videoIndex], channelKey: h.channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: h.videoIndex };
+                    grid.appendChild(createVideoCard(v, h.channelKey, h.videoIndex));
+                });
+                mainContent.appendChild(grid);
+            }
+
+            // ----- Navigation -----
+            function navigateToHome() {
+                state.currentView = 'home';
+                state.currentChannel = null;
+                window.location.hash = '';
+                updateActive();
+                renderHome();
+            }
+            function navigateToChannel(key) {
+                state.currentView = 'channel';
+                state.currentChannel = key;
+                window.location.hash = `channel=${key}`;
+                updateActive();
+                renderChannel(key);
+            }
+            function navigateToWatch(key, idx) {
                 state.currentView = 'watch';
                 state.currentChannel = key;
                 state.currentVideoIndex = idx;
                 updateActive();
                 renderWatch(key, idx);
-                return;
             }
-        } else if (hash.startsWith('channel=')) {
-            const key = hash.replace('channel=', '');
-            if (CHANNELS[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); return; }
-        } else if (hash === 'trending') { state.currentView = 'trending'; updateActive(); renderTrending(); return; }
-        else if (hash === 'library') { state.currentView = 'library'; updateActive(); renderLibrary(); return; }
-        navigateToHome();
+            function navigateToTrending() {
+                state.currentView = 'trending';
+                window.location.hash = 'trending';
+                updateActive();
+                renderTrending();
+            }
+            function navigateToLibrary() {
+                state.currentView = 'library';
+                window.location.hash = 'library';
+                updateActive();
+                renderLibrary();
+            }
+            function updateActive() {
+                $$('.sidebar-item').forEach(el => el.classList.remove('active'));
+                if (state.currentView === 'channel' && state.currentChannel) {
+                    const el = sidebar.querySelector(`[data-channel="${state.currentChannel}"]`);
+                    if (el) el.classList.add('active');
+                } else {
+                    const map = { home: 'home', trending: 'trending', library: 'library' };
+                    const sel = sidebar.querySelector(`[data-nav="${map[state.currentView]}"]`);
+                    if (sel) sel.classList.add('active');
+                }
+            }
+
+            function buildSidebarChannels() {
+                sidebarChannels.innerHTML = '';
+                for (const [key, ch] of Object.entries(state.channels)) {
+                    const item = document.createElement('div');
+                    item.className = 'sidebar-item';
+                    item.dataset.channel = key;
+                    item.innerHTML = `<span class="sidebar-icon">${ch.avatar}</span><span class="sidebar-label">${ch.name}</span>`;
+                    item.onclick = () => navigateToChannel(key);
+                    sidebarChannels.appendChild(item);
+                }
+            }
+
+            // ----- Event handlers -----
+            menuBtn.onclick = () => {
+                state.sidebarOpen = !state.sidebarOpen;
+                sidebar.classList.toggle('collapsed', !state.sidebarOpen);
+            };
+            logo.onclick = navigateToHome;
+            searchBtn.onclick = () => {
+                state.searchQuery = searchInput.value.trim();
+                navigateToHome();
+            };
+            searchInput.onkeydown = (e) => { if (e.key === 'Enter') searchBtn.click(); };
+            sidebar.addEventListener('click', (e) => {
+                const item = e.target.closest('.sidebar-item');
+                if (!item) return;
+                const nav = item.dataset.nav;
+                if (nav === 'home') navigateToHome();
+                else if (nav === 'trending') navigateToTrending();
+                else if (nav === 'library') navigateToLibrary();
+            });
+            $('#headerActions').addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                if (btn.title === 'Trending') navigateToTrending();
+                if (btn.title === 'Library') navigateToLibrary();
+            });
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash.replace('#', '');
+                if (hash.startsWith('watch=')) {
+                    const p = new URLSearchParams(hash);
+                    const key = p.get('watch');
+                    const idx = parseInt(p.get('v'));
+                    if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
+                        state.currentView = 'watch';
+                        state.currentChannel = key;
+                        state.currentVideoIndex = idx;
+                        updateActive();
+                        renderWatch(key, idx);
+                    }
+                } else if (hash.startsWith('channel=')) {
+                    const key = hash.replace('channel=', '');
+                    if (state.channels[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); }
+                } else if (hash === 'trending') navigateToTrending();
+                else if (hash === 'library') navigateToLibrary();
+                else navigateToHome();
+            });
+
+            // ----- Init -----
+            mainContent.innerHTML = '<div class="loading">⏳ Loading channels from GitHub…</div>';
+            try {
+                state.channels = await loadChannelsFromGitHub();
+                buildSidebarChannels();
+                // Parse initial hash
+                const hash = window.location.hash.replace('#', '');
+                if (hash.startsWith('watch=')) {
+                    const p = new URLSearchParams(hash);
+                    const key = p.get('watch');
+                    const idx = parseInt(p.get('v'));
+                    if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
+                        state.currentView = 'watch';
+                        state.currentChannel = key;
+                        state.currentVideoIndex = idx;
+                        updateActive();
+                        renderWatch(key, idx);
+                        return;
+                    }
+                } else if (hash.startsWith('channel=')) {
+                    const key = hash.replace('channel=', '');
+                    if (state.channels[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); return; }
+                } else if (hash === 'trending') { state.currentView = 'trending'; updateActive(); renderTrending(); return; }
+                else if (hash === 'library') { state.currentView = 'library'; updateActive(); renderLibrary(); return; }
+                navigateToHome();
+            } catch (err) {
+                console.error(err);
+                mainContent.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h2>Failed to load</h2><p>${err.message}</p><p>Make sure your repository is public and the <code>video/</code> folder exists.</p></div>`;
+                state.channels = {};
+            }
+        })();
     </script>
 </body>
 </html>
