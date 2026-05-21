@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR</title>
-    <!-- (styles unchanged from previous version) -->
+    <title>VAPOR — With TOS</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -119,16 +118,42 @@
         .loading { text-align:center; padding:60px; color:var(--text3); }
         .error-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; color:#ff4d4d; font-size:0.9rem; text-align:center; padding:20px; }
 
+        /* Upload Modal */
         .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; }
-        .modal { background:var(--bg2); border-radius:var(--radius); padding:24px; width:90%; max-width:420px; border:1px solid var(--border); }
+        .modal { background:var(--bg2); border-radius:var(--radius); padding:24px; width:90%; max-width:440px; border:1px solid var(--border); }
         .modal h2 { margin-bottom:16px; font-size:1.2rem; }
         .modal label { display:block; font-size:0.8rem; color:var(--text2); margin-bottom:4px; margin-top:12px; }
         .modal input, .modal select { width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:4px; font-size:0.85rem; margin-bottom:8px; }
         .modal button { margin-top:12px; padding:10px 18px; background:var(--accent); border:none; color:#fff; border-radius:4px; cursor:pointer; font-weight:600; }
         .modal button.cancel { background:var(--bg3); margin-left:8px; }
+        .modal button:disabled { opacity:0.5; cursor:not-allowed; }
         .token-warning { font-size:0.7rem; color:var(--text3); margin-top:4px; }
         .upload-status { font-size:0.8rem; margin-top:8px; color:var(--accent); }
         .hidden { display:none; }
+
+        .tos-checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0 8px;
+            font-size: 0.8rem;
+            color: var(--text2);
+        }
+        .tos-checkbox-wrap input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        .tos-checkbox-wrap label {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text2);
+            cursor: pointer;
+        }
+        .tos-checkbox-wrap a {
+            color: var(--accent);
+            text-decoration: underline;
+            cursor: pointer;
+        }
 
         @media (max-width:800px) {
             #sidebar { width:160px; }
@@ -197,16 +222,27 @@
             <label>GitHub Token (with repo scope)</label>
             <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
             <div class="token-warning">Token is saved only in this browser.</div>
+
+            <!-- TOS / Waiver -->
+            <div class="tos-checkbox-wrap">
+                <input type="checkbox" id="tosCheckbox">
+                <label for="tosCheckbox">
+                    I understand that I am solely responsible for the content I upload. 
+                    The platform owner is not liable for any uploaded material. 
+                    I will not upload copyrighted or illegal content.
+                </label>
+            </div>
+
             <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
                 <button class="cancel" id="cancelUpload">Cancel</button>
-                <button id="confirmUpload">Upload</button>
+                <button id="confirmUpload" disabled>Upload</button>
             </div>
             <div id="uploadStatus" class="upload-status"></div>
         </div>
     </div>
 
     <script>
-        const DEFAULT_TOKEN = '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';
+       const DEFAULT_TOKEN = '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';
         (async function() {
             const $ = (sel) => document.querySelector(sel);
             const $$ = (sel) => document.querySelectorAll(sel);
@@ -228,6 +264,7 @@
             const cancelUpload = $('#cancelUpload');
             const confirmUpload = $('#confirmUpload');
             const uploadStatus = $('#uploadStatus');
+            const tosCheckbox = $('#tosCheckbox');
 
             const state = {
                 currentView: 'home',
@@ -241,6 +278,11 @@
                 watchHistory: [],
                 channels: {}
             };
+
+            // Enable/disable upload button based on TOS checkbox
+            tosCheckbox.addEventListener('change', () => {
+                confirmUpload.disabled = !tosCheckbox.checked;
+            });
 
             let repoInfo = null;
             async function getRepoInfo() {
@@ -359,7 +401,6 @@
                 return sources;
             }
 
-            // Render functions (unchanged, but included for completeness)
             function renderHome() {
                 mainContent.innerHTML = '';
                 const all = getAllVideos();
@@ -634,7 +675,6 @@
                 mainContent.appendChild(grid);
             }
 
-            // Navigation
             function navigateToHome() { state.currentView='home'; window.location.hash=''; updateActive(); renderHome(); }
             function navigateToChannel(key) { state.currentView='channel'; state.currentChannel=key; window.location.hash=`channel=${key}`; updateActive(); renderChannel(key); }
             function navigateToWatch(key, idx) { state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key, idx); }
@@ -664,7 +704,6 @@
                 }
             }
 
-            // Event listeners
             menuBtn.onclick = () => { state.sidebarOpen = !state.sidebarOpen; sidebar.classList.toggle('collapsed', !state.sidebarOpen); };
             logo.onclick = navigateToHome;
             searchBtn.onclick = () => { state.searchQuery = searchInput.value.trim(); navigateToHome(); };
@@ -700,7 +739,6 @@
                 else navigateToHome();
             });
 
-            // --- Upload Logic ---
             function populateChannelSelect() {
                 channelSelect.innerHTML = '<option value="">-- Choose a channel --</option>';
                 for (const [key, ch] of Object.entries(state.channels)) {
@@ -726,13 +764,14 @@
 
             uploadBtn.onclick = () => {
                 populateChannelSelect();
-                // First try DEFAULT_TOKEN, then localStorage
                 const savedToken = DEFAULT_TOKEN || localStorage.getItem('vapor_github_token');
                 if (savedToken) tokenInput.value = savedToken;
                 videoTitleInput.value = '';
                 fileInput.value = '';
                 newChannelWrap.classList.add('hidden');
                 uploadStatus.textContent = '';
+                tosCheckbox.checked = false;  // Reset checkbox
+                confirmUpload.disabled = true;
                 uploadModal.style.display = 'flex';
             };
 
@@ -740,6 +779,12 @@
             uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) uploadModal.style.display = 'none'; });
 
             confirmUpload.onclick = async () => {
+                // Double-check TOS is accepted (just in case)
+                if (!tosCheckbox.checked) {
+                    uploadStatus.textContent = '❌ You must accept the terms before uploading.';
+                    return;
+                }
+
                 const token = tokenInput.value.trim();
                 const title = videoTitleInput.value.trim();
                 const file = fileInput.files[0];
@@ -772,7 +817,6 @@
                 if (!sanitizedTitle) sanitizedTitle = 'video';
                 const finalFilename = sanitizedTitle + ext;
 
-                // Save token to localStorage if it's not the default (so it persists even if DEFAULT_TOKEN changes)
                 if (token !== DEFAULT_TOKEN) {
                     localStorage.setItem('vapor_github_token', token);
                 }
