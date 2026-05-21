@@ -3,22 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — File Update Fix</title>
+    <title>VAPOR — Fixed Token Handling</title>
     <style>
         :root {
-            --bg: #0f0f0f;
-            --bg2: #1a1a1a;
-            --bg3: #242424;
-            --surface: #1e1e1e;
-            --border: #2a2a2a;
-            --text: #e2e2e2;
-            --text2: #9a9a9a;
-            --text3: #6b6b6b;
-            --accent: #3ea6ff;
-            --radius: 8px;
-            --radius-sm: 6px;
-            --transition: 0.2s ease;
-            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --bg: #0f0f0f; --bg2: #1a1a1a; --bg3: #242424; --surface: #1e1e1e;
+            --border: #2a2a2a; --text: #e2e2e2; --text2: #9a9a9a; --text3: #6b6b6b;
+            --accent: #3ea6ff; --radius: 8px; --radius-sm: 6px;
+            --transition: 0.2s ease; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { font-size:15px; scroll-behavior:smooth; }
@@ -26,7 +17,6 @@
         ::-webkit-scrollbar { width:6px; height:6px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:#333; border-radius:3px; }
-
         #header { position:sticky; top:0; z-index:100; display:flex; align-items:center; gap:14px; padding:10px 20px; background:var(--bg2); border-bottom:1px solid var(--border); height:58px; }
         #menuBtn { background:none; border:none; color:var(--text); font-size:1.3rem; cursor:pointer; padding:6px 10px; border-radius:4px; line-height:1; transition:background var(--transition); }
         #menuBtn:hover { background:var(--bg3); }
@@ -44,7 +34,6 @@
         #headerActions button:hover { background:#333; }
         #uploadBtn { background:var(--accent); border:none; color:#fff; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1.1rem; transition:background var(--transition); display:flex; align-items:center; justify-content:center; }
         #uploadBtn:hover { background:#5ab5ff; }
-
         #appLayout { display:flex; flex:1; min-height:0; }
         #sidebar { width:200px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); padding:10px 0; overflow-y:auto; transition:width 0.2s; }
         #sidebar.collapsed { width:56px; }
@@ -57,7 +46,6 @@
         .sidebar-divider { border-top:1px solid var(--border); margin:8px 14px; }
         .sidebar-section-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); padding:6px 16px; font-weight:700; }
         #sidebar.collapsed .sidebar-section-title, #sidebar.collapsed .sidebar-divider { display:none; }
-
         #mainContent { flex:1; overflow-y:auto; padding:20px 24px 40px; min-width:0; }
         .section-title { font-size:1.1rem; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
         .video-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
@@ -72,14 +60,12 @@
         .video-title { font-weight:500; font-size:0.85rem; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin-bottom:4px; }
         .video-channel { font-size:0.75rem; color:var(--text2); }
         .video-stats { font-size:0.7rem; color:var(--text3); margin-top:1px; }
-
         .channel-header { display:flex; align-items:center; gap:16px; padding:20px; background:var(--surface); border-radius:var(--radius); margin-bottom:20px; border:1px solid var(--border); flex-wrap:wrap; }
         .channel-avatar-lg { width:60px; height:60px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:bold; color:#fff; background:#444; }
         .channel-info h1 { font-size:1.3rem; font-weight:600; margin-bottom:2px; }
         .channel-info p { color:var(--text2); font-size:0.8rem; }
         .subscribe-btn { margin-left:auto; padding:8px 20px; border-radius:30px; font-weight:600; font-size:0.85rem; cursor:pointer; border:none; background:var(--accent); color:#fff; transition:background var(--transition); }
         .subscribe-btn.subscribed { background:var(--bg3); color:var(--text2); }
-
         .watch-layout { display:flex; gap:20px; flex-wrap:wrap; }
         .watch-main { flex:1; min-width:0; }
         .watch-sidebar { width:320px; flex-shrink:0; }
@@ -111,13 +97,11 @@
         .related-thumb { width:140px; aspect-ratio:16/9; border-radius:var(--radius-sm); overflow:hidden; background:#1f1f1f; flex-shrink:0; }
         .related-thumb .thumbnail-placeholder { font-size:1rem; }
         .related-info .video-title { font-size:0.78rem; }
-
         .empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
         .empty-state .icon { font-size:3rem; margin-bottom:12px; opacity:0.5; }
         .empty-state h2 { font-size:1.2rem; color:var(--text2); margin-bottom:6px; }
         .loading { text-align:center; padding:60px; color:var(--text3); }
         .error-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; color:#ff4d4d; font-size:0.9rem; text-align:center; padding:20px; }
-
         .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; }
         .modal { background:var(--bg2); border-radius:var(--radius); padding:24px; width:90%; max-width:440px; border:1px solid var(--border); }
         .modal h2 { margin-bottom:16px; font-size:1.2rem; }
@@ -132,37 +116,17 @@
         .tos-checkbox-wrap { display:flex; align-items:center; gap:8px; margin:16px 0 8px; font-size:0.8rem; color:var(--text2); }
         .tos-checkbox-wrap input[type="checkbox"] { width:auto; margin:0; }
         .tos-checkbox-wrap label { margin:0; font-size:0.8rem; color:var(--text2); cursor:pointer; }
-
-        @media (max-width:800px) {
-            #sidebar { width:160px; }
-            #sidebar.collapsed { width:48px; }
-            .watch-sidebar { width:100%; }
-            .video-grid { grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
-        }
-        @media (max-width:500px) {
-            #sidebar { width:140px; }
-            .video-grid { grid-template-columns:1fr; }
-        }
+        @media (max-width:800px) { #sidebar { width:160px; } #sidebar.collapsed { width:48px; } .watch-sidebar { width:100%; } .video-grid { grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); } }
+        @media (max-width:500px) { #sidebar { width:140px; } .video-grid { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
     <header id="header">
         <button id="menuBtn" title="Toggle sidebar">☰</button>
-        <div id="logo" title="VAPOR Home">
-            <div class="icon">V</div>
-            <span class="text">VAPOR</span>
-        </div>
-        <div id="searchWrap">
-            <input type="text" id="searchInput" placeholder="Search">
-            <button id="searchBtn">🔍</button>
-        </div>
-        <div id="headerActions">
-            <button title="Trending">🔥</button>
-            <button title="Library">📁</button>
-            <button id="uploadBtn" title="Upload video">⬆️</button>
-        </div>
+        <div id="logo" title="VAPOR Home"><div class="icon">V</div><span class="text">VAPOR</span></div>
+        <div id="searchWrap"><input type="text" id="searchInput" placeholder="Search"><button id="searchBtn">🔍</button></div>
+        <div id="headerActions"><button title="Trending">🔥</button><button title="Library">📁</button><button id="uploadBtn" title="Upload video">⬆️</button></div>
     </header>
-
     <div id="appLayout">
         <nav id="sidebar">
             <div class="sidebar-item active" data-nav="home"><span class="sidebar-icon">🏠</span><span class="sidebar-label">Home</span></div>
@@ -175,7 +139,6 @@
         </nav>
         <main id="mainContent"></main>
     </div>
-
     <div id="uploadModal" class="modal-overlay" style="display:none;">
         <div class="modal">
             <h2>Upload Video</h2>
@@ -183,10 +146,7 @@
             <input type="text" id="videoTitle" placeholder="My Awesome Video">
             <label>Channel</label>
             <select id="channelSelect"><option value="">-- Choose a channel --</option></select>
-            <div id="newChannelWrap" class="hidden">
-                <label>New Channel Name</label>
-                <input type="text" id="newChannelName" placeholder="e.g. Spartan">
-            </div>
+            <div id="newChannelWrap" class="hidden"><label>New Channel Name</label><input type="text" id="newChannelName" placeholder="e.g. Spartan"></div>
             <label>Video File (.mp4, .webm, .mkv)</label>
             <input type="file" id="fileInput" accept=".mp4,.webm,.mkv">
             <label>GitHub Token (with repo scope)</label>
@@ -206,7 +166,7 @@
 
     <script>
         // =================================================
-        //  ⚠️  PASTE YOUR NEW TOKEN HERE (with "repo" scope)
+        //  ⚠️  PASTE YOUR TOKEN HERE (must have "repo" scope)
         // =================================================
         const DEFAULT_TOKEN = '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'; // ← your fresh token
 
@@ -234,17 +194,9 @@
             const tosCheckbox = $('#tosCheckbox');
 
             const state = {
-                currentView: 'home',
-                currentChannel: null,
-                currentVideoIndex: null,
-                sidebarOpen: true,
-                searchQuery: '',
-                likedVideos: {},
-                subscribedChannels: {},
-                comments: {},
-                watchHistory: [],
-                channels: {},
-                stats: {}
+                currentView: 'home', currentChannel: null, currentVideoIndex: null, sidebarOpen: true,
+                searchQuery: '', likedVideos: {}, subscribedChannels: {}, comments: {}, watchHistory: [],
+                channels: {}, stats: {}
             };
 
             tosCheckbox.addEventListener('change', () => { confirmUpload.disabled = !tosCheckbox.checked; });
@@ -260,25 +212,17 @@
                     let branch = 'main';
                     try {
                         const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            branch = data.default_branch || 'main';
-                        }
+                        if (res.ok) { const data = await res.json(); branch = data.default_branch || 'main'; }
                     } catch(e) {}
-                    repoInfo = { owner, repo, branch };
-                    return repoInfo;
+                    repoInfo = { owner, repo, branch }; return repoInfo;
                 }
                 if (parts.length >= 2) {
                     let branch = 'main';
                     try {
                         const res = await fetch(`https://api.github.com/repos/${parts[0]}/${parts[1]}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            branch = data.default_branch || 'main';
-                        }
+                        if (res.ok) { const data = await res.json(); branch = data.default_branch || 'main'; }
                     } catch(e) {}
-                    repoInfo = { owner: parts[0], repo: parts[1], branch };
-                    return repoInfo;
+                    repoInfo = { owner: parts[0], repo: parts[1], branch }; return repoInfo;
                 }
                 return null;
             }
@@ -295,18 +239,15 @@
                 const res = await fetch(apiUrl);
                 if (!res.ok) {
                     if (res.status === 403) throw new Error('API rate limit exceeded.');
+                    if (res.status === 404) throw new Error('Directory not found – check the path.');
                     throw new Error(`GitHub API error: ${res.status}`);
                 }
                 return res.json();
             }
 
             async function getFileSha(path) {
-                try {
-                    const data = await fetchDirectoryContents(path);
-                    return data.sha;
-                } catch(e) {
-                    return null; // file doesn't exist
-                }
+                try { const data = await fetchDirectoryContents(path); return data.sha; }
+                catch(e) { return null; }
             }
 
             async function loadStats() {
@@ -316,43 +257,29 @@
                     const res = await fetch(rawUrl);
                     if (res.ok) return await res.json();
                     return {};
-                } catch(e) {
-                    return {};
-                }
+                } catch(e) { return {}; }
             }
 
             async function saveStats() {
-                const token = getToken();
-                if (!token) return;
-                const info = await getRepoInfo();
-                if (!info) return;
+                const token = getToken(); if (!token) return;
+                const info = await getRepoInfo(); if (!info) return;
                 const path = 'vapor_stats.json';
                 const content = JSON.stringify(state.stats, null, 2);
-                // Proper UTF-8 to base64 encoding
                 const base64Content = btoa(unescape(encodeURIComponent(content)));
                 const sha = await getFileSha(path);
                 const url = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${path}`;
-                const body = {
-                    message: 'Update video stats',
-                    content: base64Content,
-                    branch: info.branch
-                };
+                const body = { message: 'Update video stats', content: base64Content, branch: info.branch };
                 if (sha) body.sha = sha;
-                await fetch(url, {
-                    method: 'PUT',
-                    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+                await fetch(url, { method: 'PUT', headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             }
 
             async function incrementView(channelKey, videoIndex) {
                 if (!state.stats[channelKey]) state.stats[channelKey] = {};
                 if (!state.stats[channelKey][videoIndex]) state.stats[channelKey][videoIndex] = { views: 0, likes: 0 };
-                state.stats[channelKey][videoIndex].views = (state.stats[channelKey][videoIndex].views || 0) + 1;
-                if (state.channels[channelKey] && state.channels[channelKey].videos[videoIndex]) {
+                state.stats[channelKey][videoIndex].views++;
+                if (state.channels[channelKey] && state.channels[channelKey].videos[videoIndex])
                     state.channels[channelKey].videos[videoIndex].views = state.stats[channelKey][videoIndex].views;
-                }
-                saveStats().catch(e => console.warn('Failed to save stats:', e));
+                saveStats().catch(e => console.warn('Stats save failed:', e));
             }
 
             async function toggleLike(channelKey, videoIndex) {
@@ -362,488 +289,83 @@
                 if (!state.stats[channelKey]) state.stats[channelKey] = {};
                 if (!state.stats[channelKey][videoIndex]) state.stats[channelKey][videoIndex] = { views: 0, likes: 0 };
                 state.stats[channelKey][videoIndex].likes = Math.max(0, (state.stats[channelKey][videoIndex].likes || 0) + (wasLiked ? -1 : 1));
-                if (state.channels[channelKey] && state.channels[channelKey].videos[videoIndex]) {
+                if (state.channels[channelKey] && state.channels[channelKey].videos[videoIndex])
                     state.channels[channelKey].videos[videoIndex].likes = state.stats[channelKey][videoIndex].likes;
-                }
-                saveStats().catch(e => console.warn('Failed to save stats:', e));
+                saveStats().catch(e => console.warn('Stats save failed:', e));
                 return !wasLiked;
             }
 
             function applyStatsToChannels() {
-                for (const [channelKey, ch] of Object.entries(state.channels)) {
-                    ch.videos.forEach((video, idx) => {
-                        const vidStats = state.stats[channelKey]?.[idx];
-                        video.views = vidStats?.views || 0;
-                        video.likes = vidStats?.likes || 0;
-                    });
-                }
+                for (const [ckey, ch] of Object.entries(state.channels))
+                    ch.videos.forEach((v, i) => { v.views = state.stats[ckey]?.[i]?.views || 0; v.likes = state.stats[ckey]?.[i]?.likes || 0; });
             }
 
-            function formatViews(num) {
-                if (num >= 1000000) return (num/1000000).toFixed(1) + 'M';
-                if (num >= 1000) return (num/1000).toFixed(1) + 'K';
-                return num.toString();
-            }
-
-            function formatTitle(filename) {
-                let name = filename.replace(/\.(mp4|webm|mkv)$/i, '');
-                name = name.replace(/[-_]+/g, ' ').trim();
-                if (!name) return 'Untitled';
-                return name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-            }
+            function formatViews(n) { if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); }
+            function formatTitle(f) { let n=f.replace(/\.(mp4|webm|mkv)$/i,''); n=n.replace(/[-_]+/g,' ').trim()||'Untitled'; return n.split(' ').map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 
             async function loadChannelsFromGitHub() {
-                const cacheKey = 'vapor_channels_cache';
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) {
-                    try {
-                        const { data, timestamp } = JSON.parse(cached);
-                        if (Date.now() - timestamp < 3600000) return data;
-                    } catch(e) {}
+                const ck='vapor_channels_cache', cached=localStorage.getItem(ck);
+                if(cached){ try{ const {data,t}=JSON.parse(cached); if(Date.now()-t<36e5) return data; }catch{} }
+                const items=await fetchDirectoryContents('video');
+                const chs={}; const dirs=Array.isArray(items)?items.filter(i=>i.type==='dir'):[];
+                for(const d of dirs){
+                    const cn=d.name, ck=cn.toLowerCase().replace(/\s+/g,'_'), cont=await fetchDirectoryContents(`video/${cn}`);
+                    const vids=[]; if(Array.isArray(cont)) for(const f of cont) if(f.type==='file'&&f.name.match(/\.(mp4|webm|mkv)$/i))
+                        vids.push({file:f.name,title:formatTitle(f.name),duration:'',views:0,likes:0,date:'just now',description:''});
+                    chs[ck]={name:cn,avatar:cn.charAt(0).toUpperCase(),description:'',videos:vids};
                 }
-                const items = await fetchDirectoryContents('video');
-                const channels = {};
-                const dirs = Array.isArray(items) ? items.filter(i => i.type === 'dir') : [];
-                for (const dir of dirs) {
-                    const channelName = dir.name;
-                    const channelKey = channelName.toLowerCase().replace(/\s+/g, '_');
-                    const contents = await fetchDirectoryContents(`video/${channelName}`);
-                    const videos = [];
-                    if (Array.isArray(contents)) {
-                        for (const file of contents) {
-                            if (file.type === 'file' && file.name.match(/\.(mp4|webm|mkv)$/i)) {
-                                videos.push({
-                                    file: file.name,
-                                    title: formatTitle(file.name),
-                                    duration: '',
-                                    views: 0,
-                                    likes: 0,
-                                    date: 'just now',
-                                    description: ''
-                                });
-                            }
-                        }
-                    }
-                    channels[channelKey] = {
-                        name: channelName,
-                        avatar: channelName.charAt(0).toUpperCase(),
-                        description: '',
-                        videos: videos
-                    };
-                }
-                localStorage.setItem(cacheKey, JSON.stringify({ data: channels, timestamp: Date.now() }));
-                return channels;
+                localStorage.setItem(ck,JSON.stringify({data:chs,timestamp:Date.now()})); return chs;
             }
 
-            function getAllVideos() {
-                const all = [];
-                for (const [key, ch] of Object.entries(state.channels)) {
-                    ch.videos.forEach((v, i) => {
-                        all.push({ ...v, channelKey: key, channelName: ch.name, avatar: ch.avatar, videoIndex: i });
-                    });
-                }
-                return all;
+            function getAllVideos(){ const a=[]; for(const[k,ch] of Object.entries(state.channels)) ch.videos.forEach((v,i)=>a.push({...v,channelKey:k,channelName:ch.name,avatar:ch.avatar,videoIndex:i})); return a; }
+            function buildVideoSources(ckey,file){ const cn=state.channels[ckey]?.name||ckey; const s=[`video/${cn}/${file}`]; if(repoInfo) s.push(`https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/video/${cn}/${file}`); return s; }
+
+            // Render functions (same as before, omitted for brevity but present)
+            function renderHome(){ mainContent.innerHTML=''; const all=getAllVideos(); let f=all; if(state.searchQuery.trim()){ const q=state.searchQuery.toLowerCase(); f=all.filter(v=>v.title.toLowerCase().includes(q)||v.channelName.toLowerCase().includes(q)); } if(!Object.keys(state.channels).length){ mainContent.innerHTML='<div class="empty-state"><div class="icon">📭</div><h2>No channels</h2></div>'; return; } if(!f.length){ mainContent.innerHTML='<div class="empty-state"><div class="icon">🔍</div><h2>No results</h2></div>'; return; } const t=document.createElement('div'); t.className='section-title'; t.textContent=state.searchQuery.trim()?`Results for "${state.searchQuery}"`:'All videos'; mainContent.appendChild(t); const g=document.createElement('div'); g.className='video-grid'; f.forEach(v=>g.appendChild(createVideoCard(v,v.channelKey,v.videoIndex))); mainContent.appendChild(g); }
+            function createVideoCard(v,ck,idx){ const c=document.createElement('div'); c.className='video-card'; c.onclick=()=>navigateToWatch(ck,idx); const th=document.createElement('div'); th.className='thumbnail-wrap'; const ph=document.createElement('div'); ph.className='thumbnail-placeholder'; ph.textContent=v.title.charAt(0).toUpperCase(); th.appendChild(ph); if(v.duration){ const d=document.createElement('span'); d.className='video-duration'; d.textContent=v.duration; th.appendChild(d); } c.appendChild(th); const i=document.createElement('div'); i.className='video-info'; const av=document.createElement('div'); av.className='channel-avatar-sm'; av.textContent=(v.avatar||v.channelName?.charAt(0)||'?').toUpperCase(); i.appendChild(av); const m=document.createElement('div'); m.className='video-meta'; m.innerHTML=`<div class="video-title">${v.title}</div><div class="video-channel">${v.channelName}</div><div class="video-stats">${formatViews(v.views||0)} views · ${v.date||'just now'}</div>`; i.appendChild(m); c.appendChild(i); return c; }
+            function renderChannel(ck){ mainContent.innerHTML=''; const ch=state.channels[ck]; if(!ch){navigateToHome();return;} const h=document.createElement('div'); h.className='channel-header'; const av=document.createElement('div'); av.className='channel-avatar-lg'; av.textContent=ch.avatar.toUpperCase(); h.appendChild(av); const inf=document.createElement('div'); inf.className='channel-info'; inf.innerHTML=`<h1>${ch.name}</h1><p>${ch.description||''}</p>`; h.appendChild(inf); const sub=document.createElement('button'); sub.className='subscribe-btn'+(state.subscribedChannels[ck]?' subscribed':''); sub.textContent=state.subscribedChannels[ck]?'✓ Subscribed':'Subscribe'; sub.onclick=e=>{e.stopPropagation(); state.subscribedChannels[ck]=!state.subscribedChannels[ck]; sub.textContent=state.subscribedChannels[ck]?'✓ Subscribed':'Subscribe'; sub.classList.toggle('subscribed',state.subscribedChannels[ck]);}; h.appendChild(sub); mainContent.appendChild(h); const g=document.createElement('div'); g.className='video-grid'; ch.videos.forEach((v,i)=>{const vd={...v,channelKey:ck,channelName:ch.name,avatar:ch.avatar,videoIndex:i}; g.appendChild(createVideoCard(vd,ck,i));}); mainContent.appendChild(g); }
+            function renderWatch(ck,idx){ mainContent.innerHTML=''; const ch=state.channels[ck]; if(!ch||!ch.videos[idx]){navigateToHome();return;} const video=ch.videos[idx]; const ckKey=`${ck}|${idx}`; if(!state.comments[ckKey])state.comments[ckKey]=[]; state.watchHistory.unshift({channelKey:ck,videoIndex:idx,title:video.title,channelName:ch.name,ts:Date.now()}); if(state.watchHistory.length>50)state.watchHistory.length=50; incrementView(ck,idx); const lay=document.createElement('div'); lay.className='watch-layout'; const mn=document.createElement('div'); mn.className='watch-main'; const pl=document.createElement('div'); pl.className='player-wrap'; const vid=document.createElement('video'); vid.controls=true; vid.playsInline=true; vid.setAttribute('playsinline',''); const srcs=buildVideoSources(ck,video.file); let curSrc=0; function next(){if(curSrc<srcs.length){vid.src=srcs[curSrc];curSrc++;}else{pl.innerHTML='<div class="error-overlay">⚠️ Video not accessible.</div>';}} vid.addEventListener('error',next); vid.addEventListener('loadeddata',()=>{const ov=pl.querySelector('.error-overlay');if(ov)ov.remove();}); next(); pl.appendChild(vid); mn.appendChild(pl); const t=document.createElement('h1'); t.className='watch-title'; t.textContent=video.title; mn.appendChild(t); const mr=document.createElement('div'); mr.className='watch-meta-row'; const ci=document.createElement('div'); ci.className='watch-channel-info'; ci.style.cursor='pointer'; ci.innerHTML=`<div class="channel-avatar-sm">${ch.avatar.toUpperCase()}</div><span style="font-weight:500;">${ch.name}</span>`; ci.onclick=()=>navigateToChannel(ck); mr.appendChild(ci); const ab=document.createElement('div'); ab.className='action-btns'; const lb=document.createElement('button'); const liked=state.likedVideos[ckKey]; lb.className='action-btn'+(liked?' liked':''); lb.innerHTML=(liked?'❤️ ':'🤍 ')+'Like'; lb.onclick=async()=>{const now=await toggleLike(ck,idx); lb.classList.toggle('liked',now); lb.innerHTML=(now?'❤️ ':'🤍 ')+'Like';}; ab.appendChild(lb); const sb=document.createElement('button'); sb.className='action-btn'; sb.textContent='🔗 Share'; sb.onclick=()=>{const url=`${location.origin}${location.pathname}?watch=${ck}&v=${idx}`; navigator.clipboard.writeText(url).then(()=>{sb.textContent='✅ Copied';setTimeout(()=>sb.textContent='🔗 Share',1500);});}; ab.appendChild(sb); mr.appendChild(ab); mn.appendChild(mr); const desc=document.createElement('div'); desc.className='watch-description'; desc.textContent=video.description||'No description.'; mn.appendChild(desc); const cmts=document.createElement('div'); cmts.className='comments-section'; cmts.innerHTML='<h3>Comments</h3>'; const iw=document.createElement('div'); iw.className='comment-input-wrap'; const inp=document.createElement('input'); inp.placeholder='Add a comment...'; const post=document.createElement('button'); post.textContent='Post'; post.onclick=()=>{if(!inp.value.trim())return; state.comments[ckKey].push({user:'You',text:inp.value.trim(),time:'just now'}); inp.value=''; renderCommentsList(listEl,ckKey);}; iw.appendChild(inp); iw.appendChild(post); cmts.appendChild(iw); const listEl=document.createElement('div'); cmts.appendChild(listEl); renderCommentsList(listEl,ckKey); mn.appendChild(cmts); lay.appendChild(mn); const sw=document.createElement('div'); sw.className='watch-sidebar'; sw.innerHTML='<div class="section-title">Related</div>'; const allV=getAllVideos().filter(v=>!(v.channelKey===ck&&v.videoIndex===idx)).slice(0,6); allV.forEach(rv=>{const rc=document.createElement('div'); rc.className='related-video-card'; rc.onclick=()=>navigateToWatch(rv.channelKey,rv.videoIndex); rc.innerHTML=`<div class="related-thumb"><div class="thumbnail-placeholder">${rv.title.charAt(0)}</div></div><div class="related-info"><div class="video-title">${rv.title}</div><div class="video-channel">${rv.channelName}</div></div>`; sw.appendChild(rc);}); lay.appendChild(sw); mainContent.appendChild(lay); window.location.hash=`watch=${ck}&v=${idx}`; }
+            function renderCommentsList(cnt,key){ cnt.innerHTML=''; const list=state.comments[key]||[]; if(!list.length){cnt.innerHTML='<div style="color:var(--text3);font-size:0.8rem;padding:8px 0;">No comments yet.</div>';return;} list.slice().reverse().forEach(c=>{const d=document.createElement('div'); d.className='comment'; d.innerHTML=`<div class="comment-avatar">${c.user.charAt(0).toUpperCase()}</div><div class="comment-body"><div class="comment-user">${c.user}</div><div class="comment-text">${c.text}</div><div class="comment-time">${c.time}</div></div>`; cnt.appendChild(d);}); }
+            function renderTrending(){ mainContent.innerHTML=''; const all=getAllVideos().sort((a,b)=>(b.views||0)-(a.views||0)); if(!all.length){mainContent.innerHTML='<div class="empty-state"><div class="icon">📊</div><h2>No videos</h2></div>';return;} const t=document.createElement('div'); t.className='section-title'; t.textContent='Trending'; mainContent.appendChild(t); const g=document.createElement('div'); g.className='video-grid'; all.forEach(v=>g.appendChild(createVideoCard(v,v.channelKey,v.videoIndex))); mainContent.appendChild(g); }
+            function renderLibrary(){ mainContent.innerHTML=''; if(!state.watchHistory.length){mainContent.innerHTML='<div class="empty-state"><div class="icon">📂</div><h2>No history</h2></div>';return;} const t=document.createElement('div'); t.className='section-title'; t.textContent='Watch history'; mainContent.appendChild(t); const g=document.createElement('div'); g.className='video-grid'; state.watchHistory.forEach(h=>{const ch=state.channels[h.channelKey]; if(!ch)return; const v={...ch.videos[h.videoIndex],channelKey:h.channelKey,channelName:ch.name,avatar:ch.avatar,videoIndex:h.videoIndex}; g.appendChild(createVideoCard(v,h.channelKey,h.videoIndex));}); mainContent.appendChild(g); }
+
+            function navigateToHome(){state.currentView='home';window.location.hash='';updateActive();renderHome();}
+            function navigateToChannel(k){state.currentView='channel';state.currentChannel=k;window.location.hash=`channel=${k}`;updateActive();renderChannel(k);}
+            function navigateToWatch(k,i){state.currentView='watch';state.currentChannel=k;state.currentVideoIndex=i;updateActive();renderWatch(k,i);}
+            function navigateToTrending(){state.currentView='trending';window.location.hash='trending';updateActive();renderTrending();}
+            function navigateToLibrary(){state.currentView='library';window.location.hash='library';updateActive();renderLibrary();}
+            function updateActive(){$$('.sidebar-item').forEach(e=>e.classList.remove('active')); if(state.currentView==='channel'&&state.currentChannel){const e=sidebar.querySelector(`[data-channel="${state.currentChannel}"]`);if(e)e.classList.add('active');}else{const m={home:'home',trending:'trending',library:'library'};const s=sidebar.querySelector(`[data-nav="${m[state.currentView]}"]`);if(s)s.classList.add('active');}}
+            function buildSidebarChannels(){sidebarChannels.innerHTML=''; for(const[k,ch] of Object.entries(state.channels)){const i=document.createElement('div');i.className='sidebar-item';i.dataset.channel=k;i.innerHTML=`<span class="sidebar-icon">${ch.avatar}</span><span class="sidebar-label">${ch.name}</span>`;i.onclick=()=>navigateToChannel(k);sidebarChannels.appendChild(i);}}
+
+            menuBtn.onclick=()=>{state.sidebarOpen=!state.sidebarOpen;sidebar.classList.toggle('collapsed',!state.sidebarOpen);};
+            logo.onclick=navigateToHome;
+            searchBtn.onclick=()=>{state.searchQuery=searchInput.value.trim();navigateToHome();};
+            searchInput.onkeydown=e=>{if(e.key==='Enter')searchBtn.click();};
+            sidebar.addEventListener('click',e=>{const item=e.target.closest('.sidebar-item');if(!item)return;const nav=item.dataset.nav;if(nav==='home')navigateToHome();else if(nav==='trending')navigateToTrending();else if(nav==='library')navigateToLibrary();});
+            $('#headerActions').addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;if(btn.title==='Trending')navigateToTrending();if(btn.title==='Library')navigateToLibrary();});
+            window.addEventListener('hashchange',()=>{const hash=window.location.hash.replace('#','');if(hash.startsWith('watch=')){const p=new URLSearchParams(hash);const k=p.get('watch');const i=parseInt(p.get('v'));if(k&&!isNaN(i)&&state.channels[k]?.videos[i]){state.currentView='watch';state.currentChannel=k;state.currentVideoIndex=i;updateActive();renderWatch(k,i);}}else if(hash.startsWith('channel=')){const k=hash.replace('channel=','');if(state.channels[k]){state.currentView='channel';state.currentChannel=k;updateActive();renderChannel(k);}}else if(hash==='trending')navigateToTrending();else if(hash==='library')navigateToLibrary();else navigateToHome();});
+
+            // --- Upload (fixed) ---
+            function populateChannelSelect(){
+                channelSelect.innerHTML='<option value="">-- Choose a channel --</option>';
+                for(const[k,ch] of Object.entries(state.channels)){const o=document.createElement('option');o.value=k;o.textContent=ch.name;channelSelect.appendChild(o);}
+                const no=document.createElement('option');no.value='__new__';no.textContent='➕ Create new channel';channelSelect.appendChild(no);
             }
+            channelSelect.addEventListener('change',()=>{if(channelSelect.value==='__new__'){newChannelWrap.classList.remove('hidden');newChannelNameInput.focus();}else newChannelWrap.classList.add('hidden');});
 
-            function buildVideoSources(channelKey, file) {
-                const channelName = state.channels[channelKey]?.name || channelKey;
-                const relativePath = `video/${channelName}/${file}`;
-                const sources = [relativePath];
-                if (repoInfo) {
-                    const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/video/${channelName}/${file}`;
-                    sources.push(rawUrl);
-                }
-                return sources;
-            }
-
-            function renderHome() {
-                mainContent.innerHTML = '';
-                const all = getAllVideos();
-                let filtered = all;
-                if (state.searchQuery.trim()) {
-                    const q = state.searchQuery.toLowerCase();
-                    filtered = all.filter(v => v.title.toLowerCase().includes(q) || v.channelName.toLowerCase().includes(q));
-                }
-                if (Object.keys(state.channels).length === 0) {
-                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory or use the upload button.</p></div>`;
-                    return;
-                }
-                if (filtered.length === 0) {
-                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h2>No results</h2></div>`;
-                    return;
-                }
-                const title = document.createElement('div');
-                title.className = 'section-title';
-                title.textContent = state.searchQuery.trim() ? `Results for "${state.searchQuery}"` : 'All videos';
-                mainContent.appendChild(title);
-                const grid = document.createElement('div');
-                grid.className = 'video-grid';
-                filtered.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
-                mainContent.appendChild(grid);
-            }
-
-            function createVideoCard(video, channelKey, idx) {
-                const card = document.createElement('div');
-                card.className = 'video-card';
-                card.onclick = () => navigateToWatch(channelKey, idx);
-                const thumb = document.createElement('div');
-                thumb.className = 'thumbnail-wrap';
-                const ph = document.createElement('div');
-                ph.className = 'thumbnail-placeholder';
-                ph.textContent = video.title.charAt(0).toUpperCase();
-                thumb.appendChild(ph);
-                if (video.duration) {
-                    const d = document.createElement('span');
-                    d.className = 'video-duration';
-                    d.textContent = video.duration;
-                    thumb.appendChild(d);
-                }
-                card.appendChild(thumb);
-                const info = document.createElement('div');
-                info.className = 'video-info';
-                const av = document.createElement('div');
-                av.className = 'channel-avatar-sm';
-                av.textContent = (video.avatar || video.channelName?.charAt(0) || '?').toUpperCase();
-                info.appendChild(av);
-                const meta = document.createElement('div');
-                meta.className = 'video-meta';
-                meta.innerHTML = `<div class="video-title">${video.title}</div>
-                    <div class="video-channel">${video.channelName}</div>
-                    <div class="video-stats">${formatViews(video.views || 0)} views · ${video.date || 'just now'}</div>`;
-                info.appendChild(meta);
-                card.appendChild(info);
-                return card;
-            }
-
-            function renderChannel(channelKey) {
-                mainContent.innerHTML = '';
-                const ch = state.channels[channelKey];
-                if (!ch) { navigateToHome(); return; }
-                const header = document.createElement('div');
-                header.className = 'channel-header';
-                const av = document.createElement('div');
-                av.className = 'channel-avatar-lg';
-                av.textContent = ch.avatar.toUpperCase();
-                header.appendChild(av);
-                const inf = document.createElement('div');
-                inf.className = 'channel-info';
-                inf.innerHTML = `<h1>${ch.name}</h1><p>${ch.description || ''}</p>`;
-                header.appendChild(inf);
-                const sub = document.createElement('button');
-                sub.className = 'subscribe-btn' + (state.subscribedChannels[channelKey] ? ' subscribed' : '');
-                sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
-                sub.onclick = (e) => {
-                    e.stopPropagation();
-                    state.subscribedChannels[channelKey] = !state.subscribedChannels[channelKey];
-                    sub.textContent = state.subscribedChannels[channelKey] ? '✓ Subscribed' : 'Subscribe';
-                    sub.classList.toggle('subscribed', state.subscribedChannels[channelKey]);
-                };
-                header.appendChild(sub);
-                mainContent.appendChild(header);
-                const grid = document.createElement('div');
-                grid.className = 'video-grid';
-                ch.videos.forEach((v, i) => {
-                    const vd = { ...v, channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: i };
-                    grid.appendChild(createVideoCard(vd, channelKey, i));
-                });
-                mainContent.appendChild(grid);
-            }
-
-            function renderWatch(channelKey, idx) {
-                mainContent.innerHTML = '';
-                const ch = state.channels[channelKey];
-                if (!ch || !ch.videos[idx]) { navigateToHome(); return; }
-                const video = ch.videos[idx];
-                const commentKey = `${channelKey}|${idx}`;
-                if (!state.comments[commentKey]) state.comments[commentKey] = [];
-                state.watchHistory.unshift({ channelKey, videoIndex: idx, title: video.title, channelName: ch.name, ts: Date.now() });
-                if (state.watchHistory.length > 50) state.watchHistory.length = 50;
-
-                incrementView(channelKey, idx);
-
-                const layout = document.createElement('div');
-                layout.className = 'watch-layout';
-                const main = document.createElement('div');
-                main.className = 'watch-main';
-
-                const player = document.createElement('div');
-                player.className = 'player-wrap';
-                const vid = document.createElement('video');
-                vid.controls = true;
-                vid.playsInline = true;
-                vid.setAttribute('playsinline', '');
-                const sources = buildVideoSources(channelKey, video.file);
-                let currentSourceIndex = 0;
-                function setNextSource() {
-                    if (currentSourceIndex < sources.length) {
-                        vid.src = sources[currentSourceIndex];
-                        currentSourceIndex++;
-                    } else {
-                        player.innerHTML = '<div class="error-overlay">⚠️ Video not accessible.</div>';
-                    }
-                }
-                vid.addEventListener('error', () => setNextSource());
-                vid.addEventListener('loadeddata', () => {
-                    const overlay = player.querySelector('.error-overlay');
-                    if (overlay) overlay.remove();
-                });
-                setNextSource();
-                player.appendChild(vid);
-                main.appendChild(player);
-
-                const title = document.createElement('h1');
-                title.className = 'watch-title';
-                title.textContent = video.title;
-                main.appendChild(title);
-
-                const metaRow = document.createElement('div');
-                metaRow.className = 'watch-meta-row';
-                const chInfo = document.createElement('div');
-                chInfo.className = 'watch-channel-info';
-                chInfo.style.cursor = 'pointer';
-                chInfo.innerHTML = `<div class="channel-avatar-sm">${ch.avatar.toUpperCase()}</div><span style="font-weight:500;">${ch.name}</span>`;
-                chInfo.onclick = () => navigateToChannel(channelKey);
-                metaRow.appendChild(chInfo);
-
-                const actions = document.createElement('div');
-                actions.className = 'action-btns';
-                const likeBtn = document.createElement('button');
-                const isLiked = state.likedVideos[commentKey];
-                likeBtn.className = 'action-btn' + (isLiked ? ' liked' : '');
-                likeBtn.innerHTML = (isLiked ? '❤️ ' : '🤍 ') + 'Like';
-                likeBtn.onclick = async () => {
-                    const nowLiked = await toggleLike(channelKey, idx);
-                    likeBtn.classList.toggle('liked', nowLiked);
-                    likeBtn.innerHTML = (nowLiked ? '❤️ ' : '🤍 ') + 'Like';
-                };
-                actions.appendChild(likeBtn);
-
-                const share = document.createElement('button');
-                share.className = 'action-btn';
-                share.textContent = '🔗 Share';
-                share.onclick = () => {
-                    const url = `${location.origin}${location.pathname}?watch=${channelKey}&v=${idx}`;
-                    navigator.clipboard.writeText(url).then(() => {
-                        share.textContent = '✅ Copied';
-                        setTimeout(() => share.textContent = '🔗 Share', 1500);
-                    });
-                };
-                actions.appendChild(share);
-                metaRow.appendChild(actions);
-                main.appendChild(metaRow);
-
-                const desc = document.createElement('div');
-                desc.className = 'watch-description';
-                desc.textContent = video.description || 'No description.';
-                main.appendChild(desc);
-
-                const comments = document.createElement('div');
-                comments.className = 'comments-section';
-                comments.innerHTML = '<h3>Comments</h3>';
-                const inputWrap = document.createElement('div');
-                inputWrap.className = 'comment-input-wrap';
-                const inp = document.createElement('input');
-                inp.placeholder = 'Add a comment...';
-                const post = document.createElement('button');
-                post.textContent = 'Post';
-                post.onclick = () => {
-                    if (!inp.value.trim()) return;
-                    state.comments[commentKey].push({ user: 'You', text: inp.value.trim(), time: 'just now' });
-                    inp.value = '';
-                    renderCommentsList(listEl, commentKey);
-                };
-                inputWrap.appendChild(inp);
-                inputWrap.appendChild(post);
-                comments.appendChild(inputWrap);
-                const listEl = document.createElement('div');
-                comments.appendChild(listEl);
-                renderCommentsList(listEl, commentKey);
-                main.appendChild(comments);
-                layout.appendChild(main);
-
-                const sidebarWatch = document.createElement('div');
-                sidebarWatch.className = 'watch-sidebar';
-                sidebarWatch.innerHTML = '<div class="section-title">Related</div>';
-                const allVids = getAllVideos().filter(v => !(v.channelKey === channelKey && v.videoIndex === idx));
-                const related = allVids.slice(0, 6);
-                related.forEach(rv => {
-                    const rc = document.createElement('div');
-                    rc.className = 'related-video-card';
-                    rc.onclick = () => navigateToWatch(rv.channelKey, rv.videoIndex);
-                    rc.innerHTML = `<div class="related-thumb"><div class="thumbnail-placeholder">${rv.title.charAt(0)}</div></div>
-                    <div class="related-info"><div class="video-title">${rv.title}</div><div class="video-channel">${rv.channelName}</div></div>`;
-                    sidebarWatch.appendChild(rc);
-                });
-                layout.appendChild(sidebarWatch);
-                mainContent.appendChild(layout);
-                window.location.hash = `watch=${channelKey}&v=${idx}`;
-            }
-
-            function renderCommentsList(container, key) {
-                container.innerHTML = '';
-                const list = state.comments[key] || [];
-                if (!list.length) {
-                    container.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;padding:8px 0;">No comments yet.</div>';
-                    return;
-                }
-                list.slice().reverse().forEach(c => {
-                    const div = document.createElement('div');
-                    div.className = 'comment';
-                    div.innerHTML = `<div class="comment-avatar">${c.user.charAt(0).toUpperCase()}</div>
-                    <div class="comment-body"><div class="comment-user">${c.user}</div><div class="comment-text">${c.text}</div><div class="comment-time">${c.time}</div></div>`;
-                    container.appendChild(div);
-                });
-            }
-
-            function renderTrending() {
-                mainContent.innerHTML = '';
-                const all = getAllVideos().sort((a,b) => (b.views||0) - (a.views||0));
-                if (!all.length) {
-                    mainContent.innerHTML = '<div class="empty-state"><div class="icon">📊</div><h2>No videos</h2></div>';
-                    return;
-                }
-                const t = document.createElement('div');
-                t.className = 'section-title';
-                t.textContent = 'Trending';
-                mainContent.appendChild(t);
-                const grid = document.createElement('div');
-                grid.className = 'video-grid';
-                all.forEach(v => grid.appendChild(createVideoCard(v, v.channelKey, v.videoIndex)));
-                mainContent.appendChild(grid);
-            }
-
-            function renderLibrary() {
-                mainContent.innerHTML = '';
-                if (!state.watchHistory.length) {
-                    mainContent.innerHTML = '<div class="empty-state"><div class="icon">📂</div><h2>No history</h2></div>';
-                    return;
-                }
-                const t = document.createElement('div');
-                t.className = 'section-title';
-                t.textContent = 'Watch history';
-                mainContent.appendChild(t);
-                const grid = document.createElement('div');
-                grid.className = 'video-grid';
-                state.watchHistory.forEach(h => {
-                    const ch = state.channels[h.channelKey];
-                    if (!ch) return;
-                    const v = { ...ch.videos[h.videoIndex], channelKey: h.channelKey, channelName: ch.name, avatar: ch.avatar, videoIndex: h.videoIndex };
-                    grid.appendChild(createVideoCard(v, h.channelKey, h.videoIndex));
-                });
-                mainContent.appendChild(grid);
-            }
-
-            // Navigation
-            function navigateToHome() { state.currentView='home'; window.location.hash=''; updateActive(); renderHome(); }
-            function navigateToChannel(key) { state.currentView='channel'; state.currentChannel=key; window.location.hash=`channel=${key}`; updateActive(); renderChannel(key); }
-            function navigateToWatch(key, idx) { state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key, idx); }
-            function navigateToTrending() { state.currentView='trending'; window.location.hash='trending'; updateActive(); renderTrending(); }
-            function navigateToLibrary() { state.currentView='library'; window.location.hash='library'; updateActive(); renderLibrary(); }
-            function updateActive() {
-                $$('.sidebar-item').forEach(el => el.classList.remove('active'));
-                if (state.currentView === 'channel' && state.currentChannel) {
-                    const el = sidebar.querySelector(`[data-channel="${state.currentChannel}"]`);
-                    if (el) el.classList.add('active');
-                } else {
-                    const map = { home:'home', trending:'trending', library:'library' };
-                    const sel = sidebar.querySelector(`[data-nav="${map[state.currentView]}"]`);
-                    if (sel) sel.classList.add('active');
-                }
-            }
-
-            function buildSidebarChannels() {
-                sidebarChannels.innerHTML = '';
-                for (const [key, ch] of Object.entries(state.channels)) {
-                    const item = document.createElement('div');
-                    item.className = 'sidebar-item';
-                    item.dataset.channel = key;
-                    item.innerHTML = `<span class="sidebar-icon">${ch.avatar}</span><span class="sidebar-label">${ch.name}</span>`;
-                    item.onclick = () => navigateToChannel(key);
-                    sidebarChannels.appendChild(item);
-                }
-            }
-
-            // Event listeners
-            menuBtn.onclick = () => { state.sidebarOpen = !state.sidebarOpen; sidebar.classList.toggle('collapsed', !state.sidebarOpen); };
-            logo.onclick = navigateToHome;
-            searchBtn.onclick = () => { state.searchQuery = searchInput.value.trim(); navigateToHome(); };
-            searchInput.onkeydown = (e) => { if (e.key === 'Enter') searchBtn.click(); };
-            sidebar.addEventListener('click', (e) => {
-                const item = e.target.closest('.sidebar-item');
-                if (!item) return;
-                const nav = item.dataset.nav;
-                if (nav === 'home') navigateToHome();
-                else if (nav === 'trending') navigateToTrending();
-                else if (nav === 'library') navigateToLibrary();
-            });
-            $('#headerActions').addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
-                if (!btn) return;
-                if (btn.title === 'Trending') navigateToTrending();
-                if (btn.title === 'Library') navigateToLibrary();
-            });
-            window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.replace('#', '');
-                if (hash.startsWith('watch=')) {
-                    const p = new URLSearchParams(hash);
-                    const key = p.get('watch');
-                    const idx = parseInt(p.get('v'));
-                    if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
-                        state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key,idx);
-                    }
-                } else if (hash.startsWith('channel=')) {
-                    const key = hash.replace('channel=', '');
-                    if (state.channels[key]) { state.currentView='channel'; state.currentChannel=key; updateActive(); renderChannel(key); }
-                } else if (hash === 'trending') navigateToTrending();
-                else if (hash === 'library') navigateToLibrary();
-                else navigateToHome();
-            });
-
-            // Upload logic with SHA fix
-            function populateChannelSelect() {
-                channelSelect.innerHTML = '<option value="">-- Choose a channel --</option>';
-                for (const [key, ch] of Object.entries(state.channels)) {
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.textContent = ch.name;
-                    channelSelect.appendChild(opt);
-                }
-                const newOpt = document.createElement('option');
-                newOpt.value = '__new__';
-                newOpt.textContent = '➕ Create new channel';
-                channelSelect.appendChild(newOpt);
-            }
-
-            channelSelect.addEventListener('change', () => {
-                if (channelSelect.value === '__new__') {
-                    newChannelWrap.classList.remove('hidden');
-                    newChannelNameInput.focus();
-                } else {
-                    newChannelWrap.classList.add('hidden');
-                }
-            });
-
-            uploadBtn.onclick = () => {
+            uploadBtn.onclick=()=>{
                 populateChannelSelect();
                 const savedToken = DEFAULT_TOKEN || localStorage.getItem('vapor_github_token');
                 if (savedToken) tokenInput.value = savedToken;
-                videoTitleInput.value = '';
-                fileInput.value = '';
-                newChannelWrap.classList.add('hidden');
-                uploadStatus.textContent = '';
-                tosCheckbox.checked = false;
-                confirmUpload.disabled = true;
-                uploadModal.style.display = 'flex';
+                videoTitleInput.value=''; fileInput.value=''; newChannelWrap.classList.add('hidden');
+                uploadStatus.textContent=''; tosCheckbox.checked=false; confirmUpload.disabled=true;
+                uploadModal.style.display='flex';
             };
-
-            cancelUpload.onclick = () => { uploadModal.style.display = 'none'; };
-            uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) uploadModal.style.display = 'none'; });
+            cancelUpload.onclick=()=>{uploadModal.style.display='none';};
+            uploadModal.addEventListener('click',e=>{if(e.target===uploadModal)uploadModal.style.display='none';});
 
             confirmUpload.onclick = async () => {
-                if (!tosCheckbox.checked) {
-                    uploadStatus.textContent = '❌ You must accept the terms.';
-                    return;
-                }
+                if (!tosCheckbox.checked) { uploadStatus.textContent = '❌ You must accept the terms.'; return; }
                 const token = tokenInput.value.trim();
                 const title = videoTitleInput.value.trim();
                 const file = fileInput.files[0];
@@ -859,10 +381,7 @@
                 let channelName, channelKey;
                 if (selectedChannel === '__new__') {
                     channelName = newChannelNameInput.value.trim();
-                    if (!channelName) {
-                        uploadStatus.textContent = '❌ Enter new channel name.';
-                        return;
-                    }
+                    if (!channelName) { uploadStatus.textContent = '❌ Enter new channel name.'; return; }
                     channelKey = channelName.toLowerCase().replace(/\s+/g, '_');
                 } else {
                     channelName = state.channels[selectedChannel].name;
@@ -871,6 +390,8 @@
                 const ext = file.name.substring(file.name.lastIndexOf('.'));
                 let sanitized = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'video';
                 const finalFilename = sanitized + ext;
+
+                // Save token if it's different from default
                 if (token !== DEFAULT_TOKEN) localStorage.setItem('vapor_github_token', token);
                 uploadStatus.textContent = '⏳ Uploading...';
 
@@ -879,17 +400,13 @@
                     if (!info) throw new Error('No repo info.');
 
                     const path = `video/${channelName}/${finalFilename}`;
-                    // Check if file already exists to get its SHA (for updates)
+                    // Get SHA of existing file (for update)
                     const sha = await getFileSha(path);
 
-                    // Read file as base64 (properly)
+                    // Read file as base64
                     const reader = new FileReader();
                     const base64Content = await new Promise((resolve, reject) => {
-                        reader.onload = () => {
-                            // Extract base64 part after comma
-                            const base64 = reader.result.split(',')[1];
-                            resolve(base64);
-                        };
+                        reader.onload = () => resolve(reader.result.split(',')[1]);
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
@@ -900,23 +417,20 @@
                         content: base64Content,
                         branch: info.branch
                     };
-                    if (sha) body.sha = sha;  // Include SHA if updating
+                    if (sha) body.sha = sha;
 
                     const putRes = await fetch(putUrl, {
                         method: 'PUT',
                         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
+
                     if (!putRes.ok) {
                         const errData = await putRes.json().catch(() => ({ message: 'Unknown error' }));
                         let message = errData.message || 'Upload failed';
-                        if (putRes.status === 401) {
-                            message = 'Bad credentials – your token is invalid or expired.';
-                        } else if (putRes.status === 403) {
-                            message = 'Access denied – token needs "repo" scope.';
-                        } else if (putRes.status === 422) {
-                            message = 'Update failed – file may already exist or SHA missing.';
-                        }
+                        if (putRes.status === 401) message = 'Bad credentials – token invalid or expired.';
+                        else if (putRes.status === 403) message = 'Access denied – token needs "repo" scope.';
+                        else if (putRes.status === 422) message = 'File already exists or SHA missing. Try a different title.';
                         throw new Error(message);
                     }
 
@@ -929,7 +443,7 @@
                     if (state.currentView === 'home') renderHome();
                     else if (state.currentView === 'channel' && state.currentChannel === channelKey) renderChannel(channelKey);
                     setTimeout(() => { uploadModal.style.display = 'none'; }, 1500);
-                } catch(err) {
+                } catch (err) {
                     uploadStatus.textContent = `❌ Error: ${err.message}`;
                 }
             };
@@ -946,20 +460,18 @@
                 const hash = window.location.hash.replace('#', '');
                 if (hash.startsWith('watch=')) {
                     const p = new URLSearchParams(hash);
-                    const key = p.get('watch');
-                    const idx = parseInt(p.get('v'));
-                    if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
-                        state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx;
-                        updateActive(); renderWatch(key, idx);
-                        return;
+                    const k = p.get('watch'), i = parseInt(p.get('v'));
+                    if (k && !isNaN(i) && state.channels[k]?.videos[i]) {
+                        state.currentView='watch'; state.currentChannel=k; state.currentVideoIndex=i;
+                        updateActive(); renderWatch(k,i); return;
                     }
                 } else if (hash.startsWith('channel=')) {
-                    const key = hash.replace('channel=', '');
-                    if (state.channels[key]) { state.currentView='channel'; state.currentChannel=key; updateActive(); renderChannel(key); return; }
-                } else if (hash === 'trending') { state.currentView='trending'; updateActive(); renderTrending(); return; }
-                else if (hash === 'library') { state.currentView='library'; updateActive(); renderLibrary(); return; }
+                    const k = hash.replace('channel=', '');
+                    if (state.channels[k]) { state.currentView='channel'; state.currentChannel=k; updateActive(); renderChannel(k); return; }
+                } else if (hash === 'trending') { navigateToTrending(); return; }
+                else if (hash === 'library') { navigateToLibrary(); return; }
                 navigateToHome();
-            } catch(err) {
+            } catch (err) {
                 console.error(err);
                 mainContent.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h2>Failed to load</h2><p>${err.message}</p></div>`;
                 state.channels = {};
