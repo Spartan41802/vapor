@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — Views & Likes</title>
+    <title>VAPOR — Fixed Token Handling</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -205,12 +205,7 @@
     </div>
 
     <script>
-        // =================================================
-        //  ⚠️  PASTE YOUR TOKEN HERE (between the quotes)
-        //  Leave empty to use the one stored in localStorage.
-        // =================================================
-       const DEFAULT_TOKEN = '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';
-
+        const DEFAULT_TOKEN = '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'; 
         (async function() {
             const $ = (sel) => document.querySelector(sel);
             const $$ = (sel) => document.querySelectorAll(sel);
@@ -240,17 +235,16 @@
                 currentVideoIndex: null,
                 sidebarOpen: true,
                 searchQuery: '',
-                likedVideos: {},       // per-user like state (local)
+                likedVideos: {},
                 subscribedChannels: {},
                 comments: {},
                 watchHistory: [],
                 channels: {},
-                stats: {}              // { channelKey: { videoIndex: { views: n, likes: n } } }
+                stats: {}
             };
 
             tosCheckbox.addEventListener('change', () => { confirmUpload.disabled = !tosCheckbox.checked; });
 
-            // ----- GitHub helpers -----
             let repoInfo = null;
             async function getRepoInfo() {
                 if (repoInfo) return repoInfo;
@@ -307,7 +301,7 @@
                     const data = await fetchDirectoryContents(path);
                     return data.sha;
                 } catch(e) {
-                    return null; // file doesn't exist
+                    return null;
                 }
             }
 
@@ -316,9 +310,7 @@
                     const info = await getRepoInfo();
                     const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/vapor_stats.json`;
                     const res = await fetch(rawUrl);
-                    if (res.ok) {
-                        return await res.json();
-                    }
+                    if (res.ok) return await res.json();
                     return {};
                 } catch(e) {
                     return {};
@@ -327,7 +319,7 @@
 
             async function saveStats() {
                 const token = getToken();
-                if (!token) return; // can't save without token
+                if (!token) return;
                 const info = await getRepoInfo();
                 if (!info) return;
                 const path = 'vapor_stats.json';
@@ -342,33 +334,25 @@
                 if (sha) body.sha = sha;
                 await fetch(url, {
                     method: 'PUT',
-                    headers: {
-                        Authorization: `token ${token}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
             }
 
-            // Increment view for a video
             async function incrementView(channelKey, videoIndex) {
                 if (!state.stats[channelKey]) state.stats[channelKey] = {};
                 if (!state.stats[channelKey][videoIndex]) state.stats[channelKey][videoIndex] = { views: 0, likes: 0 };
                 state.stats[channelKey][videoIndex].views = (state.stats[channelKey][videoIndex].views || 0) + 1;
-                // Update the in-memory video object
                 if (state.channels[channelKey] && state.channels[channelKey].videos[videoIndex]) {
                     state.channels[channelKey].videos[videoIndex].views = state.stats[channelKey][videoIndex].views;
                 }
-                // Save asynchronously (don't block UI)
                 saveStats().catch(e => console.warn('Failed to save stats:', e));
             }
 
-            // Toggle like and update total likes in stats
             async function toggleLike(channelKey, videoIndex) {
                 const key = `${channelKey}|${videoIndex}`;
                 const wasLiked = state.likedVideos[key];
                 state.likedVideos[key] = !wasLiked;
-
                 if (!state.stats[channelKey]) state.stats[channelKey] = {};
                 if (!state.stats[channelKey][videoIndex]) state.stats[channelKey][videoIndex] = { views: 0, likes: 0 };
                 state.stats[channelKey][videoIndex].likes = Math.max(0, (state.stats[channelKey][videoIndex].likes || 0) + (wasLiked ? -1 : 1));
@@ -379,7 +363,6 @@
                 return !wasLiked;
             }
 
-            // Apply stats to loaded channels
             function applyStatsToChannels() {
                 for (const [channelKey, ch] of Object.entries(state.channels)) {
                     ch.videos.forEach((video, idx) => {
@@ -390,7 +373,6 @@
                 }
             }
 
-            // ----- Formatting -----
             function formatViews(num) {
                 if (num >= 1000000) return (num/1000000).toFixed(1) + 'M';
                 if (num >= 1000) return (num/1000).toFixed(1) + 'K';
@@ -468,7 +450,7 @@
                 return sources;
             }
 
-            // ----- Render -----
+            // Render functions (same as before, omitted for brevity but present in full file)
             function renderHome() {
                 mainContent.innerHTML = '';
                 const all = getAllVideos();
@@ -520,10 +502,9 @@
                 info.appendChild(av);
                 const meta = document.createElement('div');
                 meta.className = 'video-meta';
-                const viewsText = formatViews(video.views || 0);
                 meta.innerHTML = `<div class="video-title">${video.title}</div>
                     <div class="video-channel">${video.channelName}</div>
-                    <div class="video-stats">${viewsText} views · ${video.date || 'just now'}</div>`;
+                    <div class="video-stats">${formatViews(video.views || 0)} views · ${video.date || 'just now'}</div>`;
                 info.appendChild(meta);
                 card.appendChild(info);
                 return card;
@@ -573,7 +554,6 @@
                 state.watchHistory.unshift({ channelKey, videoIndex: idx, title: video.title, channelName: ch.name, ts: Date.now() });
                 if (state.watchHistory.length > 50) state.watchHistory.length = 50;
 
-                // Increment view count
                 incrementView(channelKey, idx);
 
                 const layout = document.createElement('div');
@@ -814,7 +794,7 @@
                 else navigateToHome();
             });
 
-            // Upload logic (unchanged except we clear stats cache too)
+            // Upload logic with better error handling
             function populateChannelSelect() {
                 channelSelect.innerHTML = '<option value="">-- Choose a channel --</option>';
                 for (const [key, ch] of Object.entries(state.channels)) {
@@ -888,9 +868,19 @@
                 const finalFilename = sanitized + ext;
                 if (token !== DEFAULT_TOKEN) localStorage.setItem('vapor_github_token', token);
                 uploadStatus.textContent = '⏳ Uploading...';
+
                 try {
                     const info = await getRepoInfo();
                     if (!info) throw new Error('No repo info.');
+                    // First verify the token is valid
+                    const testRes = await fetch('https://api.github.com/user', {
+                        headers: { Authorization: `token ${token}` }
+                    });
+                    if (!testRes.ok) {
+                        if (testRes.status === 401) throw new Error('Bad credentials – check your token or regenerate it.');
+                        throw new Error(`Token check failed: ${testRes.status}`);
+                    }
+
                     const path = `video/${channelName}/${finalFilename}`;
                     const reader = new FileReader();
                     const base64 = await new Promise((res, rej) => {
@@ -905,10 +895,13 @@
                         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
-                    if (!putRes.ok) throw new Error((await putRes.json()).message);
+                    if (!putRes.ok) {
+                        const errData = await putRes.json();
+                        throw new Error(errData.message || `Upload failed: ${putRes.status}`);
+                    }
+
                     uploadStatus.textContent = '✅ Uploaded! Reloading…';
                     localStorage.removeItem('vapor_channels_cache');
-                    // Reload channels and stats
                     state.channels = await loadChannelsFromGitHub();
                     state.stats = await loadStats();
                     applyStatsToChannels();
@@ -921,7 +914,7 @@
                 }
             };
 
-            // ----- Initialization -----
+            // Init
             mainContent.innerHTML = '<div class="loading">⏳ Loading…</div>';
             try {
                 await getRepoInfo();
