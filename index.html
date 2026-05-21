@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAPOR — Dynamic</title>
+    <title>VAPOR — Dynamic + Upload</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -42,6 +42,8 @@
         #headerActions { display:flex; gap:4px; flex-shrink:0; }
         #headerActions button { background:var(--bg3); border:none; color:var(--text); width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1rem; transition:background var(--transition); display:flex; align-items:center; justify-content:center; }
         #headerActions button:hover { background:#333; }
+        #uploadBtn { background:var(--accent); border:none; color:#fff; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1.1rem; transition:background var(--transition); display:flex; align-items:center; justify-content:center; }
+        #uploadBtn:hover { background:#5ab5ff; }
 
         #appLayout { display:flex; flex:1; min-height:0; }
         #sidebar { width:200px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); padding:10px 0; overflow-y:auto; transition:width 0.2s; }
@@ -115,6 +117,24 @@
         .empty-state h2 { font-size:1.2rem; color:var(--text2); margin-bottom:6px; }
         .loading { text-align:center; padding:60px; color:var(--text3); }
 
+        /* Upload modal */
+        .modal-overlay {
+            position: fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal {
+            background:var(--bg2); border-radius:var(--radius); padding:24px;
+            width:90%; max-width:420px; border:1px solid var(--border);
+        }
+        .modal h2 { margin-bottom:16px; font-size:1.2rem; }
+        .modal label { display:block; font-size:0.8rem; color:var(--text2); margin-bottom:4px; margin-top:12px; }
+        .modal input, .modal select { width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:4px; font-size:0.85rem; margin-bottom:8px; }
+        .modal button { margin-top:12px; padding:10px 18px; background:var(--accent); border:none; color:#fff; border-radius:4px; cursor:pointer; font-weight:600; }
+        .modal button.cancel { background:var(--bg3); margin-left:8px; }
+        .token-warning { font-size:0.7rem; color:var(--text3); margin-top:4px; }
+        .upload-status { font-size:0.8rem; margin-top:8px; color:var(--accent); }
+        .error { color:#ff4d4d; }
+
         @media (max-width:800px) {
             #sidebar { width:160px; }
             #sidebar.collapsed { width:48px; }
@@ -141,6 +161,7 @@
         <div id="headerActions">
             <button title="Trending">🔥</button>
             <button title="Library">📁</button>
+            <button id="uploadBtn" title="Upload video">⬆️</button>
         </div>
     </header>
 
@@ -163,9 +184,29 @@
         <main id="mainContent"></main>
     </div>
 
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal-overlay" style="display:none;">
+        <div class="modal">
+            <h2>Upload Video</h2>
+            <label>GitHub Token (with repo scope)</label>
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
+            <div class="token-warning">Token is saved only in this browser.</div>
+            <label>Channel Folder</label>
+            <select id="channelSelect"></select>
+            <label>Video File (.mp4)</label>
+            <input type="file" id="fileInput" accept=".mp4,.webm,.mkv">
+            <label>Custom filename (optional, without extension)</label>
+            <input type="text" id="customFilename" placeholder="Leave empty for original name">
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="cancel" id="cancelUpload">Cancel</button>
+                <button id="confirmUpload">Upload</button>
+            </div>
+            <div id="uploadStatus" class="upload-status"></div>
+        </div>
+    </div>
+
     <script>
         (async function() {
-            // ----- DOM refs -----
             const $ = (sel) => document.querySelector(sel);
             const $$ = (sel) => document.querySelectorAll(sel);
             const mainContent = $('#mainContent');
@@ -175,8 +216,16 @@
             const menuBtn = $('#menuBtn');
             const logo = $('#logo');
             const searchBtn = $('#searchBtn');
+            const uploadBtn = $('#uploadBtn');
+            const uploadModal = $('#uploadModal');
+            const tokenInput = $('#tokenInput');
+            const channelSelect = $('#channelSelect');
+            const fileInput = $('#fileInput');
+            const customFilename = $('#customFilename');
+            const cancelUpload = $('#cancelUpload');
+            const confirmUpload = $('#confirmUpload');
+            const uploadStatus = $('#uploadStatus');
 
-            // ----- State -----
             const state = {
                 currentView: 'home',
                 currentChannel: null,
@@ -187,42 +236,38 @@
                 subscribedChannels: {},
                 comments: {},
                 watchHistory: [],
-                channels: {}  // populated dynamically
+                channels: {}
             };
 
-            // ----- GitHub API helpers -----
+            // Repo info
             function getRepoInfo() {
-                // Try to extract owner/repo from GitHub Pages URL (username.github.io/repo)
                 const { hostname, pathname } = window.location;
                 const parts = pathname.split('/').filter(p => p);
                 if (hostname.endsWith('github.io')) {
                     const owner = hostname.replace('.github.io', '');
                     const repo = parts[0] || '';
-                    return { owner, repo };
+                    return { owner, repo, branch: 'main' }; // default branch; will be updated later
                 }
-                // Fallback: maybe custom domain or local testing – prompt or assume?
-                // For demo, we can try to extract from path if it looks like /owner/repo/...
                 if (parts.length >= 2) {
-                    return { owner: parts[0], repo: parts[1] };
+                    return { owner: parts[0], repo: parts[1], branch: 'main' };
                 }
                 return null;
             }
 
             async function fetchDirectoryContents(path) {
                 const info = getRepoInfo();
-                if (!info) throw new Error('Cannot detect repository from URL.');
+                if (!info) throw new Error('Cannot detect repository.');
                 const { owner, repo } = info;
                 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    if (response.status === 403) throw new Error('GitHub API rate limit exceeded. Try again later.');
-                    throw new Error(`GitHub API error: ${response.status}`);
+                const res = await fetch(apiUrl);
+                if (!res.ok) {
+                    if (res.status === 403) throw new Error('API rate limit exceeded.');
+                    throw new Error(`GitHub API error: ${res.status}`);
                 }
-                return response.json();
+                return res.json();
             }
 
             function formatTitle(filename) {
-                // remove extension, replace hyphens/underscores with spaces, capitalize words
                 let name = filename.replace(/\.(mp4|webm|mkv)$/i, '');
                 name = name.replace(/[-_]+/g, ' ').trim();
                 if (!name) return 'Untitled';
@@ -230,24 +275,17 @@
             }
 
             async function loadChannelsFromGitHub() {
-                // Check cache first (1 hour)
                 const cacheKey = 'vapor_channels_cache';
                 const cached = localStorage.getItem(cacheKey);
                 if (cached) {
                     try {
                         const { data, timestamp } = JSON.parse(cached);
-                        if (Date.now() - timestamp < 3600000) {
-                            return data;
-                        }
+                        if (Date.now() - timestamp < 3600000) return data;
                     } catch(e) {}
                 }
-
-                // Fetch video folder
-                const videoDirItems = await fetchDirectoryContents('video');
+                const items = await fetchDirectoryContents('video');
                 const channels = {};
-
-                // Only process directories
-                const dirs = Array.isArray(videoDirItems) ? videoDirItems.filter(item => item.type === 'dir') : [];
+                const dirs = Array.isArray(items) ? items.filter(i => i.type === 'dir') : [];
                 for (const dir of dirs) {
                     const channelName = dir.name;
                     const channelKey = channelName.toLowerCase().replace(/\s+/g, '_');
@@ -259,7 +297,7 @@
                                 videos.push({
                                     file: file.name,
                                     title: formatTitle(file.name),
-                                    duration: '', // unknown
+                                    duration: '',
                                     views: '0',
                                     date: 'just now',
                                     description: ''
@@ -274,17 +312,10 @@
                         videos: videos
                     };
                 }
-
-                // Save to cache
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    data: channels,
-                    timestamp: Date.now()
-                }));
-
+                localStorage.setItem(cacheKey, JSON.stringify({ data: channels, timestamp: Date.now() }));
                 return channels;
             }
 
-            // ----- Helpers -----
             function getAllVideos() {
                 const all = [];
                 for (const [key, ch] of Object.entries(state.channels)) {
@@ -295,17 +326,12 @@
                 return all;
             }
 
+            // FIXED: Use relative URL for video playback (works on GitHub Pages)
             function getVideoPath(channelKey, file) {
-                // Use raw GitHub URL
-                const info = getRepoInfo();
-                if (info) {
-                    return `https://raw.githubusercontent.com/${info.owner}/${info.repo}/main/video/${channelKey}/${file}`;
-                }
-                // fallback relative (won't work on GitHub Pages usually)
                 return `video/${channelKey}/${file}`;
             }
 
-            // ----- Render -----
+            // Render functions (unchanged except for video source)
             function renderHome() {
                 mainContent.innerHTML = '';
                 const all = getAllVideos();
@@ -315,7 +341,7 @@
                     filtered = all.filter(v => v.title.toLowerCase().includes(q) || v.channelName.toLowerCase().includes(q));
                 }
                 if (Object.keys(state.channels).length === 0) {
-                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory on GitHub.</p></div>`;
+                    mainContent.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h2>No channels found</h2><p>Add folders with .mp4 files inside the <code>/video</code> directory.</p></div>`;
                     return;
                 }
                 if (filtered.length === 0) {
@@ -420,6 +446,9 @@
                 vid.src = getVideoPath(channelKey, video.file);
                 vid.controls = true;
                 vid.playsInline = true;
+                vid.onerror = () => {
+                    player.innerHTML = '<div style="padding:20px;color:#ff4d4d;">⚠️ Failed to load video. Check file path.</div>';
+                };
                 player.appendChild(vid);
                 main.appendChild(player);
 
@@ -562,47 +591,19 @@
                 mainContent.appendChild(grid);
             }
 
-            // ----- Navigation -----
-            function navigateToHome() {
-                state.currentView = 'home';
-                state.currentChannel = null;
-                window.location.hash = '';
-                updateActive();
-                renderHome();
-            }
-            function navigateToChannel(key) {
-                state.currentView = 'channel';
-                state.currentChannel = key;
-                window.location.hash = `channel=${key}`;
-                updateActive();
-                renderChannel(key);
-            }
-            function navigateToWatch(key, idx) {
-                state.currentView = 'watch';
-                state.currentChannel = key;
-                state.currentVideoIndex = idx;
-                updateActive();
-                renderWatch(key, idx);
-            }
-            function navigateToTrending() {
-                state.currentView = 'trending';
-                window.location.hash = 'trending';
-                updateActive();
-                renderTrending();
-            }
-            function navigateToLibrary() {
-                state.currentView = 'library';
-                window.location.hash = 'library';
-                updateActive();
-                renderLibrary();
-            }
+            // Navigation
+            function navigateToHome() { state.currentView='home'; window.location.hash=''; updateActive(); renderHome(); }
+            function navigateToChannel(key) { state.currentView='channel'; state.currentChannel=key; window.location.hash=`channel=${key}`; updateActive(); renderChannel(key); }
+            function navigateToWatch(key, idx) { state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key, idx); }
+            function navigateToTrending() { state.currentView='trending'; window.location.hash='trending'; updateActive(); renderTrending(); }
+            function navigateToLibrary() { state.currentView='library'; window.location.hash='library'; updateActive(); renderLibrary(); }
             function updateActive() {
                 $$('.sidebar-item').forEach(el => el.classList.remove('active'));
                 if (state.currentView === 'channel' && state.currentChannel) {
                     const el = sidebar.querySelector(`[data-channel="${state.currentChannel}"]`);
                     if (el) el.classList.add('active');
                 } else {
-                    const map = { home: 'home', trending: 'trending', library: 'library' };
+                    const map = { home:'home', trending:'trending', library:'library' };
                     const sel = sidebar.querySelector(`[data-nav="${map[state.currentView]}"]`);
                     if (sel) sel.classList.add('active');
                 }
@@ -620,16 +621,10 @@
                 }
             }
 
-            // ----- Event handlers -----
-            menuBtn.onclick = () => {
-                state.sidebarOpen = !state.sidebarOpen;
-                sidebar.classList.toggle('collapsed', !state.sidebarOpen);
-            };
+            // Event listeners
+            menuBtn.onclick = () => { state.sidebarOpen = !state.sidebarOpen; sidebar.classList.toggle('collapsed', !state.sidebarOpen); };
             logo.onclick = navigateToHome;
-            searchBtn.onclick = () => {
-                state.searchQuery = searchInput.value.trim();
-                navigateToHome();
-            };
+            searchBtn.onclick = () => { state.searchQuery = searchInput.value.trim(); navigateToHome(); };
             searchInput.onkeydown = (e) => { if (e.key === 'Enter') searchBtn.click(); };
             sidebar.addEventListener('click', (e) => {
                 const item = e.target.closest('.sidebar-item');
@@ -652,48 +647,152 @@
                     const key = p.get('watch');
                     const idx = parseInt(p.get('v'));
                     if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
-                        state.currentView = 'watch';
-                        state.currentChannel = key;
-                        state.currentVideoIndex = idx;
-                        updateActive();
-                        renderWatch(key, idx);
+                        state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key,idx);
                     }
                 } else if (hash.startsWith('channel=')) {
                     const key = hash.replace('channel=', '');
-                    if (state.channels[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); }
+                    if (state.channels[key]) { state.currentView='channel'; state.currentChannel=key; updateActive(); renderChannel(key); }
                 } else if (hash === 'trending') navigateToTrending();
                 else if (hash === 'library') navigateToLibrary();
                 else navigateToHome();
             });
+
+            // ----- Upload functionality -----
+            uploadBtn.onclick = () => {
+                // Refresh channel list in select
+                channelSelect.innerHTML = '';
+                const keys = Object.keys(state.channels);
+                if (keys.length === 0) {
+                    channelSelect.innerHTML = '<option value="">-- No channels --</option>';
+                } else {
+                    keys.forEach(key => {
+                        const opt = document.createElement('option');
+                        opt.value = key;
+                        opt.textContent = state.channels[key].name;
+                        channelSelect.appendChild(opt);
+                    });
+                }
+                // Load saved token
+                const savedToken = localStorage.getItem('vapor_github_token');
+                if (savedToken) tokenInput.value = savedToken;
+                uploadModal.style.display = 'flex';
+                uploadStatus.textContent = '';
+            };
+
+            cancelUpload.onclick = () => { uploadModal.style.display = 'none'; fileInput.value = ''; customFilename.value = ''; };
+            uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) { uploadModal.style.display = 'none'; fileInput.value = ''; customFilename.value = ''; } });
+
+            confirmUpload.onclick = async () => {
+                const token = tokenInput.value.trim();
+                const channelKey = channelSelect.value;
+                const file = fileInput.files[0];
+                if (!token || !channelKey || !file) {
+                    uploadStatus.textContent = '❌ Please fill all fields.';
+                    return;
+                }
+                if (!file.name.match(/\.(mp4|webm|mkv)$/i)) {
+                    uploadStatus.textContent = '❌ Only .mp4, .webm, .mkv allowed.';
+                    return;
+                }
+                // Save token (optional)
+                localStorage.setItem('vapor_github_token', token);
+
+                uploadStatus.textContent = '⏳ Uploading...';
+                try {
+                    const info = getRepoInfo();
+                    if (!info) throw new Error('Cannot detect repository.');
+
+                    // Determine the default branch of the repo
+                    let branch = 'main';
+                    try {
+                        const repoRes = await fetch(`https://api.github.com/repos/${info.owner}/${info.repo}`, {
+                            headers: { Authorization: `token ${token}` }
+                        });
+                        if (repoRes.ok) {
+                            const repoData = await repoRes.json();
+                            branch = repoData.default_branch || 'main';
+                        }
+                    } catch(e) { console.warn('Could not fetch default branch, using main'); }
+
+                    const channelName = state.channels[channelKey].name;
+                    const rawFileName = file.name;
+                    const custom = customFilename.value.trim();
+                    let finalName = rawFileName;
+                    if (custom) {
+                        const ext = rawFileName.substring(rawFileName.lastIndexOf('.'));
+                        finalName = custom + ext;
+                    }
+                    const path = `video/${channelName}/${finalName}`;
+
+                    // Read file as base64
+                    const reader = new FileReader();
+                    const base64Content = await new Promise((resolve, reject) => {
+                        reader.onload = () => {
+                            const base64 = reader.result.split(',')[1];
+                            resolve(base64);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+
+                    // GitHub API PUT
+                    const putUrl = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${path}`;
+                    const body = {
+                        message: `Upload ${finalName} via VAPOR`,
+                        content: base64Content,
+                        branch: branch
+                    };
+                    const putRes = await fetch(putUrl, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    if (!putRes.ok) {
+                        const errData = await putRes.json();
+                        throw new Error(errData.message || `HTTP ${putRes.status}`);
+                    }
+                    uploadStatus.textContent = '✅ Upload successful! Reloading channels…';
+                    // Clear cache and reload
+                    localStorage.removeItem('vapor_channels_cache');
+                    fileInput.value = '';
+                    customFilename.value = '';
+                    // Reload channels
+                    state.channels = await loadChannelsFromGitHub();
+                    buildSidebarChannels();
+                    if (state.currentView === 'home') renderHome();
+                    else if (state.currentView === 'channel' && state.currentChannel === channelKey) renderChannel(channelKey);
+                    setTimeout(() => { uploadModal.style.display = 'none'; }, 1500);
+                } catch(err) {
+                    uploadStatus.textContent = `❌ Error: ${err.message}`;
+                }
+            };
 
             // ----- Init -----
             mainContent.innerHTML = '<div class="loading">⏳ Loading channels from GitHub…</div>';
             try {
                 state.channels = await loadChannelsFromGitHub();
                 buildSidebarChannels();
-                // Parse initial hash
                 const hash = window.location.hash.replace('#', '');
                 if (hash.startsWith('watch=')) {
                     const p = new URLSearchParams(hash);
                     const key = p.get('watch');
                     const idx = parseInt(p.get('v'));
                     if (key && !isNaN(idx) && state.channels[key]?.videos[idx]) {
-                        state.currentView = 'watch';
-                        state.currentChannel = key;
-                        state.currentVideoIndex = idx;
-                        updateActive();
-                        renderWatch(key, idx);
+                        state.currentView='watch'; state.currentChannel=key; state.currentVideoIndex=idx; updateActive(); renderWatch(key,idx);
                         return;
                     }
                 } else if (hash.startsWith('channel=')) {
                     const key = hash.replace('channel=', '');
-                    if (state.channels[key]) { state.currentView = 'channel'; state.currentChannel = key; updateActive(); renderChannel(key); return; }
-                } else if (hash === 'trending') { state.currentView = 'trending'; updateActive(); renderTrending(); return; }
-                else if (hash === 'library') { state.currentView = 'library'; updateActive(); renderLibrary(); return; }
+                    if (state.channels[key]) { state.currentView='channel'; state.currentChannel=key; updateActive(); renderChannel(key); return; }
+                } else if (hash === 'trending') { state.currentView='trending'; updateActive(); renderTrending(); return; }
+                else if (hash === 'library') { state.currentView='library'; updateActive(); renderLibrary(); return; }
                 navigateToHome();
-            } catch (err) {
+            } catch(err) {
                 console.error(err);
-                mainContent.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h2>Failed to load</h2><p>${err.message}</p><p>Make sure your repository is public and the <code>video/</code> folder exists.</p></div>`;
+                mainContent.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h2>Failed to load</h2><p>${err.message}</p></div>`;
                 state.channels = {};
             }
         })();
